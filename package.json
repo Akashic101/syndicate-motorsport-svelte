@@ -18,6 +18,7 @@
 		"@eslint/compat": "^1.4.0",
 		"@eslint/js": "^9.36.0",
 		"@flowbite-svelte-plugins/datatable": "^0.4.1",
+		"@inlang/paraglide-js": "^2.3.2",
 		"@sveltejs/adapter-auto": "^6.1.0",
 		"@sveltejs/adapter-node": "^5.4.0",
 		"@sveltejs/kit": "^2.43.2",
