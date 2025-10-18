@@ -9,7 +9,65 @@
 		TableBodyCell
 	} from 'flowbite-svelte';
 	import { DiscordSolid } from 'flowbite-svelte-icons';
-	let { data } = $props<{ data: { events: { title: string; href: string; time: string }[] } }>();
+	let { data } = $props<{ data: { events: { title: string; href: string; time: number }[] } }>();
+	import { m } from "$lib/paraglide/messages.js"
+
+	// Function to format time in user's local timezone with BST fallback
+	function formatEventTime(timestamp: number): string {
+		try {
+			// Convert to integer if it's a floating point number
+			const intTimestamp = Math.floor(timestamp);
+			const date = new Date(intTimestamp);
+			
+			// Check if the date is valid
+			if (isNaN(date.getTime())) {
+				console.warn('Invalid timestamp:', timestamp, 'converted to:', intTimestamp);
+				return 'Invalid date';
+			}
+
+			// Try to get user's timezone
+			const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			
+			// Format the date in user's local timezone
+			const localTime = date.toLocaleString('en-US', {
+				timeZone: userTimezone,
+				weekday: 'long',
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: '2-digit',
+				hour12: true
+			});
+
+			// Get timezone abbreviation
+			const timeZoneName = date.toLocaleString('en-US', {
+				timeZone: userTimezone,
+				timeZoneName: 'short'
+			}).split(' ').pop() || '';
+
+			return `${localTime} ${timeZoneName}`;
+		} catch (error) {
+			// Fallback to BST if timezone detection fails
+			try {
+				const intTimestamp = Math.floor(timestamp);
+				const date = new Date(intTimestamp);
+				const bstTime = date.toLocaleString('en-US', {
+					timeZone: 'Europe/London',
+					weekday: 'long',
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true
+				});
+				return `${bstTime} BST`;
+			} catch (fallbackError) {
+				return 'Invalid date';
+			}
+		}
+	}
 </script>
 
 <section class="relative w-full">
@@ -26,7 +84,7 @@
 		>
 			<span class="flex items-center gap-2">
 				<DiscordSolid class="h-6 w-6 shrink-0" />
-				Join our Discord
+				{m.that_male_martin_read()}
 			</span>
 		</Button>
 	</div>
@@ -55,7 +113,7 @@
 							</TableBodyCell>
 
 							<TableBodyCell class="whitespace-nowrap">
-								{item.time} BST (UTC+1)
+								{formatEventTime(item.time)}
 							</TableBodyCell>
 						</TableBodyRow>
 					{/each}

@@ -1,0 +1,79 @@
+<script lang="ts">
+	import type { DriverRow } from '$lib/db';
+	
+	let { data } = $props<{ data: { driver: DriverRow } }>();
+	let driver = $derived(data.driver);
+	
+	function getBadgeStyle(license: string): string {
+		switch (license.toLowerCase()) {
+			case 'gold': return 'color:#f59e0b;background-color:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);';
+			case 'silver': return 'color:#e5e7eb;background-color:rgba(229,231,235,0.12);border-color:rgba(229,231,235,0.35);';
+			case 'bronze': return 'color:#cd7f32;background-color:rgba(205,127,50,0.15);border-color:rgba(205,127,50,0.45);';
+			case 'rookie':
+			default: return 'color:#22c55e;background-color:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);';
+		}
+	}
+	
+	function getSafetyBadgeStyle(rating: string): string {
+		switch (rating.toUpperCase()) {
+			case 'S': return 'color:#fff;background:linear-gradient(135deg,#10b981 0%,#059669 50%,#047857 100%);border-color:#10b981;box-shadow:0 0 8px rgba(16,185,129,0.4),inset 0 1px 0 rgba(255,255,255,0.2);text-shadow:0 1px 2px rgba(0,0,0,0.3);';
+			case 'A': return 'color:#3b82f6;background-color:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4);';
+			case 'B': return 'color:#f59e0b;background-color:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);';
+			case 'C': return 'color:#f97316;background-color:rgba(249,115,22,0.15);border-color:rgba(249,115,22,0.4);';
+			case 'D': return 'color:#ef4444;background-color:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);';
+			case 'E': return 'color:#6b7280;background-color:rgba(107,114,128,0.15);border-color:rgba(107,114,128,0.4);';
+			default: return '';
+		}
+	}
+</script>
+
+<div class="m-8 max-w-4xl mx-auto">
+	<a href="/drivers" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mb-4 inline-block">
+		← Back to Rankings
+	</a>
+	
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+		<h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+			{driver['Driver Name']}
+		</h1>
+		
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div class="space-y-4">
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Rank</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">#{driver.Rank}</p>
+				</div>
+				
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">ELO Rating</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">{driver.ELO}</p>
+				</div>
+			</div>
+			
+			<div class="space-y-4">
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">License</p>
+					<div class="mt-2">
+						<span style={getBadgeStyle(driver.License)} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
+							{driver.License}
+						</span>
+					</div>
+				</div>
+				
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Safety Rating</p>
+					<div class="mt-2">
+						<span style={getSafetyBadgeStyle(driver['Safety Rating'])} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
+							{driver['Safety Rating']}
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+			<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Driver GUID</p>
+			<p class="text-sm text-gray-600 dark:text-gray-400 font-mono mt-1">{driver.DriverGUID}</p>
+		</div>
+	</div>
+</div>

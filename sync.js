@@ -10,7 +10,7 @@ const sheets = [
     url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXEpA0_3WvJmtxJTKZ97Bi8tbZWsjCZT892N4mNgdaMJyhO-Syh1Xn-Yf4KaGw9SAZjGRwjtCpjZb/pub?gid=1933046167&single=true&output=csv',
     columns: [
       { header: 'Event', name: 'event', type: 'TEXT' },
-      { header: 'Time', name: 'time', type: 'TEXT' }
+      { header: 'Time', name: 'time', type: 'INTEGER' }
     ]
   },
   {
@@ -40,6 +40,30 @@ const sheets = [
     ]
   }
 ];
+
+// --------------------------
+// Date Parsing Helper
+// --------------------------
+function parseEventTime(timeString) {
+  if (!timeString || timeString === '') return null;
+  
+  try {
+    // Parse date string like "October 25 2025 07:00 PM"
+    const date = new Date(timeString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date string: "${timeString}"`);
+      return null;
+    }
+    
+    // Return timestamp in milliseconds (SQLite INTEGER can store this)
+    return date.getTime();
+  } catch (error) {
+    console.warn(`Error parsing date "${timeString}":`, error.message);
+    return null;
+  }
+}
 
 // --------------------------
 // CSV Update Logic
@@ -80,6 +104,12 @@ async function updateSheet(sheet) {
           const values = sheet.columns.map((col) => {
             let v = row[col.header];
             if (v === '') return null;
+            
+            // Special handling for time field in events table
+            if (sheet.name === 'events' && col.name === 'time') {
+              return parseEventTime(v);
+            }
+            
             switch (col.type.toUpperCase()) {
               case 'INTEGER':
                 return parseInt(v, 10);

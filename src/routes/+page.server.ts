@@ -1,9 +1,10 @@
 import type { PageServerLoad } from './$types';
+import { getEvents } from '$lib/db';
 
 type EventItem = {
 	title: string;
 	href: string;
-	time: string;
+	time: number; // timestamp in milliseconds
 };
 
 function extractAnchor(html: string): { title: string; href: string } {
@@ -28,30 +29,6 @@ function extractAnchor(html: string): { title: string; href: string } {
 	return { title, href };
 }
 
-function parseCsvToEvents(csv: string): EventItem[] {
-	const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
-	if (lines.length <= 1) return [];
-
-	const items: EventItem[] = [];
-
-	// skip header
-	for (let i = 1; i < lines.length; i++) {
-		const cols = lines[i].split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
-
-		const eventHtml = cols[0] ?? '';
-		const time = cols[1] ?? '';
-
-		if (!eventHtml || !time) continue;
-
-		const { title, href } = extractAnchor(eventHtml);
-		if (!title && !href) continue;
-
-		items.push({ title, href, time });
-	}
-
-	return items;
-}
-
 function normalizeUrl(url: string): string {
 	if (!url) return '';
 	const trimmed = url.trim();
@@ -61,15 +38,21 @@ function normalizeUrl(url: string): string {
 }
 
 export const load: PageServerLoad = async () => {
-	const url =
-		'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXEpA0_3WvJmtxJTKZ97Bi8tbZWsjCZT892N4mNgdaMJyhO-Syh1Xn-Yf4KaGw9SAZjGRwjtCpjZb/pub?gid=1933046167&single=true&output=csv';
+	try {
+		const dbEvents = await getEvents();
+		
+		const events: EventItem[] = dbEvents.map(dbEvent => {
+			const { title, href } = extractAnchor(dbEvent.event);
+			return {
+				title,
+				href,
+				time: dbEvent.time
+			};
+		}).filter(event => event.title || event.href);
 
-	const res = await fetch(url, { cache: 'no-store' });
-	if (!res.ok) {
+		return { events };
+	} catch (error) {
+		console.error('Error loading events:', error);
 		return { events: [] };
 	}
-
-	const csv = await res.text();
-	const events = parseCsvToEvents(csv);
-	return { events };
 };
