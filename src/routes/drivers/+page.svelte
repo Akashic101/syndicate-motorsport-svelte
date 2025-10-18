@@ -17,8 +17,11 @@
 	let drivers: DriverRow[] = data?.drivers ?? [];
 	let isLoading = drivers.length === 0;
 
-	const renderDriverName = (cellData: any, type: string, row: any) => {
-		return `<a href="http://localhost:5173/${drivers[row].DriverGUID}">${drivers[row].Driver}</a>`;
+	const renderDriverName = (data: any) => {
+		// Find the driver data by matching the driver name
+		const driver = drivers.find(d => d.Driver === data);
+		if (!driver) return data;
+		return `<a href="http://localhost:5173/${driver.DriverGUID}">${driver.Driver}</a>`;
 	};
 
 	// --------------------------
@@ -133,7 +136,7 @@
 				cellAttributes: (row: DriverRow) => ({
 					'data-order': getSafetySortValue(row['Safety Rating']).toString()
 				})
-			}
+			},{ select: 5, hidden: true },
 		]
 	};
 

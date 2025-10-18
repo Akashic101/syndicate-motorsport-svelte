@@ -72,27 +72,16 @@ async function updateSheet(sheet) {
   try {
     console.log(`[${new Date().toISOString()}] Starting sync for sheet: ${sheet.name}`);
 
-    console.log('Fetching CSV from URL...');
     const { data } = await axios.get(sheet.url);
-    console.log(`Fetched ${data.length} characters of CSV data`);
-
-    console.log('Parsing CSV into JSON...');
     const jsonData = await csv().fromString(data);
-    console.log(`Parsed CSV into ${jsonData.length} rows`);
 
-    console.log('Ensuring table exists...');
     ensureTable(sheet.name, sheet.columns);
-    console.log(`Table "${sheet.name}" is ready`);
 
-    console.log('Building insert statement...');
     const quotedCols = sheet.columns.map((c) => quoteIdentifier(c.name)).join(', ');
     const placeholders = sheet.columns.map(() => '?').join(', ');
     const insertSql = `INSERT INTO ${quoteIdentifier(sheet.name)} (${quotedCols}) VALUES (${placeholders})`;
-    console.log('Insert SQL:', insertSql);
 
-    console.log('Starting database transaction...');
     db.serialize(() => {
-      console.log('Clearing table...');
       db.run(`DELETE FROM ${quoteIdentifier(sheet.name)}`);
 
       const stmt = db.prepare(insertSql);
@@ -128,10 +117,7 @@ async function updateSheet(sheet) {
       }
 
       stmt.finalize();
-      console.log('Database insert finalized');
     });
-
-    console.log(`✅ Successfully synced ${jsonData.length} rows into table "${sheet.name}"`);
   } catch (err) {
     console.error(`❌ Error syncing sheet "${sheet.name}":`, err.message);
   }

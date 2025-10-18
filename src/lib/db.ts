@@ -23,7 +23,6 @@ export function getAllDrivers(): Promise<DriverRow[]> {
         `;
         db.all(sql, [], (err: any, rows: DriverRow[]) => {
             if (err) return reject(err);
-            console.table(rows)
             resolve(rows as DriverRow[]);
         });
     });
@@ -48,7 +47,7 @@ export function getDriverByGUID(driverGUID: string): Promise<DriverRow | null> {
     });
 }
 
-export type EventRow = {
+type EventRow = {
     event: string;
     time: number; // timestamp in milliseconds
 };
