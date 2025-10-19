@@ -30,7 +30,7 @@
         'FRA': 'FR',  // France
         'USA': 'US',  // United States
         'AUT': 'AT',  // Austria
-        'PLA': 'PL',  // Poland
+        'POL': 'PL',  // Poland
         'FIN': 'FI',  // Finland
         'ITA': 'IT',  // Italy
         'NRU': 'NR',  // Nauru
@@ -38,6 +38,43 @@
         'ENG': 'GB',  // England (using GB)
         'ALB': 'AL',  // Albania
         'PHL': 'PH',  // Philippines
+        'UKR': 'UA',  // Ukraine
+        'HUN': 'HU',  // Hungary
+        'NLD': 'NL',  // Netherlands
+        'AUS': 'AU',  // Australia
+        'SWE': 'SE',  // Sweden
+        'LVA': 'LV',  // Latvia
+        'LTU': 'LT',  // Lithuania
+        'EST': 'EE',  // Estonia
+        'CZE': 'CZ',  // Czech Republic
+        'SVK': 'SK',  // Slovakia
+        'CRO': 'HR',  // Croatia
+        'BEL': 'BE',  // Belgium
+        'BGR': 'BG',  // Bulgaria
+        'ROU': 'RO',  // Romania
+        'SRB': 'RS',  // Serbia
+        'MNE': 'ME',  // Montenegro
+        'MKD': 'MK',  // Macedonia
+        'GEO': 'GE',  // Georgia
+        'JER': 'JE',  // Jersey
+        'CAN': 'CA',  // Canada
+        'BLR': 'BY',  // Belarus
+        'MDA': 'MD',  // Moldova
+        'ARM': 'AM',  // Armenia
+        'AZE': 'AZ',  // Azerbaijan
+        'TUR': 'TR',  // Turkey
+        'SYR': 'SY',  // Syria
+        'JOR': 'JO',  // Jordan
+        'QAT': 'QA',  // Qatar
+        'KWT': 'KW',  // Kuwait
+        'BHR': 'BH',  // Bahrain
+        'OMN': 'OM',  // Oman
+        'ARE': 'AE',  // United Arab Emirates
+        'TTO': 'TT',  // Trinidad and Tobago
+        'BRA': 'BR',  // Brazil
+        'PRT': 'PT',  // Portugal
+        'WLS': 'GB', // Wales
+        'OTH': 'EU',  // Other
         '': ''        // Empty string
     };
 

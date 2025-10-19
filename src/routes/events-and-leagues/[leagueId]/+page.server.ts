@@ -29,8 +29,19 @@ export const load: PageServerLoad = async ({ params }) => {
         
         const apiData = await response.json();
         
-        // Process driver standings data - handle both data structures
-        const driverStandings = apiData.DriverStandings?.[""] || apiData.DriverStandings?.["All"] || [];
+                // Process driver standings data - handle multiple data structures
+                let driverStandings = [];
+                if (apiData.DriverStandings) {
+                    // Try different possible keys for driver standings
+                    const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500"];
+                    for (const key of possibleKeys) {
+                        if (apiData.DriverStandings[key]) {
+                            driverStandings = apiData.DriverStandings[key];
+                            break;
+                        }
+                    }
+                }
+        
         const drivers = driverStandings.map((driver: any, index: number) => ({
             position: index + 1,
             name: driver.Car.Driver.Name,
@@ -42,8 +53,19 @@ export const load: PageServerLoad = async ({ params }) => {
             restrictor: driver.Car.Restrictor
         }));
         
-        // Process team standings data - handle both data structures
-        const teamStandings = apiData.TeamStandings?.[""] || apiData.TeamStandings?.["All"] || [];
+                // Process team standings data - handle multiple data structures
+                let teamStandings = [];
+                if (apiData.TeamStandings) {
+                    // Try different possible keys for team standings
+                    const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500"];
+                    for (const key of possibleKeys) {
+                        if (apiData.TeamStandings[key]) {
+                            teamStandings = apiData.TeamStandings[key];
+                            break;
+                        }
+                    }
+                }
+        
         const teams = teamStandings.map((team: any, index: number) => ({
             position: index + 1,
             name: team.Team,

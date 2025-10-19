@@ -33,6 +33,7 @@ function initializeDatabase(): Promise<void> {
                     season TEXT,
                     discord_invite TEXT,
                     website TEXT,
+                    image_path TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `, (err) => {
@@ -40,6 +41,13 @@ function initializeDatabase(): Promise<void> {
                     reject(err);
                     return;
                 }
+
+                // Add image_path column if it doesn't exist (for existing databases)
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN image_path TEXT DEFAULT ''
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
 
                 // Check if we already have data
                 database.get('SELECT COUNT(*) as count FROM championships', (err, row: any) => {
@@ -67,8 +75,8 @@ function initializeDatabase(): Promise<void> {
 
                         // Insert sample data
                         const insertStmt = database.prepare(`
-                            INSERT INTO championships (id, name, description, season, discord_invite, website)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO championships (id, name, description, season, discord_invite, website, image_path)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
                         `);
 
                         sampleChampionships.forEach(championship => {
@@ -77,6 +85,7 @@ function initializeDatabase(): Promise<void> {
                                 championship.name,
                                 championship.description,
                                 championship.season,
+                                '',
                                 '',
                                 ''
                             );
@@ -140,14 +149,17 @@ export function addChampionship(championship: {
     name: string;
     description?: string;
     season?: string;
+    discord_invite?: string;
+    website?: string;
+    image_path?: string;
 }): Promise<any> {
     return new Promise(async (resolve, reject) => {
         try {
             await initializeDatabase();
             const database = getDatabase();
             const stmt = database.prepare(`
-                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website, image_path)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `);
             
             stmt.run(
@@ -155,8 +167,9 @@ export function addChampionship(championship: {
                 championship.name,
                 championship.description || '',
                 championship.season || '',
-                '',
-                '',
+                championship.discord_invite || '',
+                championship.website || '',
+                championship.image_path || '',
                 function(this: { changes: number }, err: any) {
                     if (err) return reject(err);
                     resolve({ id: championship.id, changes: this.changes });
