@@ -70,23 +70,39 @@ function parseEventTime(timeString) {
 // --------------------------
 async function updateSheet(sheet) {
   try {
-    console.log(`[${new Date().toISOString()}] Starting sync for sheet: ${sheet.name}`);
+    console.log(`\n🔄 [${new Date().toISOString()}] Starting sync for sheet: ${sheet.name}`);
+    console.log(`📡 Fetching data from: ${sheet.url}`);
 
     const { data } = await axios.get(sheet.url);
+    console.log(`✅ Successfully fetched CSV data (${data.length} characters)`);
+    
     const jsonData = await csv().fromString(data);
+    console.log(`📊 Parsed CSV into ${jsonData.length} rows`);
 
+    console.log(`🏗️  Ensuring table '${sheet.name}' exists with columns:`, sheet.columns.map(c => `${c.name} (${c.type})`));
     ensureTable(sheet.name, sheet.columns);
 
     const quotedCols = sheet.columns.map((c) => quoteIdentifier(c.name)).join(', ');
     const placeholders = sheet.columns.map(() => '?').join(', ');
     const insertSql = `INSERT INTO ${quoteIdentifier(sheet.name)} (${quotedCols}) VALUES (${placeholders})`;
 
+    console.log(`🗑️  Clearing existing data from '${sheet.name}' table`);
     db.serialize(() => {
-      db.run(`DELETE FROM ${quoteIdentifier(sheet.name)}`);
+      db.run(`DELETE FROM ${quoteIdentifier(sheet.name)}`, function(err) {
+        if (err) {
+          console.error(`❌ Error clearing table '${sheet.name}':`, err.message);
+          return;
+        }
+        console.log(`✅ Cleared ${this.changes} existing records from '${sheet.name}'`);
+      });
 
+      console.log(`📝 Preparing to insert ${jsonData.length} new records`);
       const stmt = db.prepare(insertSql);
 
       let rowIndex = 0;
+      let successCount = 0;
+      let errorCount = 0;
+      
       for (const row of jsonData) {
         rowIndex++;
         try {
@@ -96,62 +112,124 @@ async function updateSheet(sheet) {
             
             // Special handling for time field in events table
             if (sheet.name === 'events' && col.name === 'time') {
-              return parseEventTime(v);
+              const parsedTime = parseEventTime(v);
+              if (parsedTime === null) {
+                console.log(`⚠️  Row ${rowIndex}: Invalid time format '${v}', setting to null`);
+              }
+              return parsedTime;
             }
             
             switch (col.type.toUpperCase()) {
               case 'INTEGER':
-                return parseInt(v, 10);
+                const intVal = parseInt(v, 10);
+                if (isNaN(intVal)) {
+                  console.log(`⚠️  Row ${rowIndex}: Invalid integer '${v}', setting to null`);
+                  return null;
+                }
+                return intVal;
               case 'REAL':
-                return parseFloat(v);
+                const floatVal = parseFloat(v);
+                if (isNaN(floatVal)) {
+                  console.log(`⚠️  Row ${rowIndex}: Invalid float '${v}', setting to null`);
+                  return null;
+                }
+                return floatVal;
               case 'TEXT':
                 return v;
               default:
                 return v;
             }
           });
-          stmt.run(values);
+          
+          stmt.run(values, function(err) {
+            if (err) {
+              console.error(`❌ Error inserting row ${rowIndex}:`, err.message);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          });
         } catch (rowErr) {
-          console.error(`❌ Error inserting row ${rowIndex}:`, rowErr.message, 'Row data:', row);
+          console.error(`❌ Error processing row ${rowIndex}:`, rowErr.message, 'Row data:', row);
+          errorCount++;
         }
       }
 
-      stmt.finalize();
+      stmt.finalize((err) => {
+        if (err) {
+          console.error(`❌ Error finalizing statement for '${sheet.name}':`, err.message);
+        } else {
+          console.log(`✅ Completed sync for '${sheet.name}': ${successCount} successful, ${errorCount} errors`);
+        }
+      });
     });
   } catch (err) {
     console.error(`❌ Error syncing sheet "${sheet.name}":`, err.message);
+    if (err.response) {
+      console.error(`📡 HTTP Status: ${err.response.status} ${err.response.statusText}`);
+    }
   }
 }
 
 async function updateAllSheets() {
+  console.log(`\n🚀 [${new Date().toISOString()}] Starting full sync of ${sheets.length} sheets`);
+  console.log(`📋 Sheets to sync: ${sheets.map(s => s.name).join(', ')}`);
+  
+  const startTime = Date.now();
+  
   for (const sheet of sheets) {
     await updateSheet(sheet);
   }
+  
+  const endTime = Date.now();
+  const duration = ((endTime - startTime) / 1000).toFixed(2);
+  console.log(`\n🎉 [${new Date().toISOString()}] Full sync completed in ${duration} seconds`);
 }
 
 // --------------------------
 // Initial sync + Cron every 5 minutes
 // --------------------------
+console.log('🏁 Starting Syndicate Motorsport Data Sync');
+console.log('📅 Initial sync starting...');
 updateAllSheets();
-cron.schedule('*/5 * * * *', updateAllSheets);
+
+console.log('⏰ Setting up cron job to sync every 15 minutes');
+cron.schedule('*/15 * * * *', () => {
+  console.log(`\n⏰ [${new Date().toISOString()}] Cron-triggered sync starting...`);
+  updateAllSheets();
+});
 
 // --------------------------
 // Graceful DB close on exit
 // --------------------------
 process.on('SIGINT', () => {
-  console.log('Received SIGINT. Closing DB...');
+  console.log('\n🛑 Received SIGINT. Gracefully shutting down...');
+  console.log('📊 Closing database connection...');
   db.close((err) => {
-    if (err) console.error('Error closing DB:', err.message);
-    else console.log('DB closed.');
+    if (err) {
+      console.error('❌ Error closing DB:', err.message);
+    } else {
+      console.log('✅ Database connection closed successfully');
+    }
+    console.log('👋 Syndicate Motorsport Data Sync stopped');
     process.exit(0);
   });
 });
 
 process.on('SIGTERM', () => {
-  console.log('Received SIGTERM. Closing DB...');
+  console.log('\n🛑 Received SIGTERM. Gracefully shutting down...');
+  console.log('📊 Closing database connection...');
   db.close((err) => {
-    if (err) console.error('Error closing DB:', err.message);
-    else console.log('DB closed.');
+    if (err) {
+      console.error('❌ Error closing DB:', err.message);
+    } else {
+      console.log('✅ Database connection closed successfully');
+    }
+    console.log('👋 Syndicate Motorsport Data Sync stopped');
     process.exit(0);
   });
 });
+
+// Log startup completion
+console.log('✅ Sync service initialized and running');
+console.log('💡 Press Ctrl+C to stop the service');
