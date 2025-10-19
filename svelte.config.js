@@ -1,20 +1,26 @@
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-	preprocess: vitePreprocess(),
+const dev = process.argv.includes('dev');
 
-	kit: {
-		adapter: adapter({
-			pages: 'build',     // folder for final HTML output
-			assets: 'build',    // static assets folder
-			fallback: 'index.html' // SPA fallback for client-side routing
-		}),
-		paths: {
-			base: '',           // keep this empty unless you deploy in a subdirectory
-		}
-	}
+export default {
+  preprocess: vitePreprocess(),
+  kit: {
+    adapter: adapter({
+      // output directory (default 'build')
+      pages: 'build',
+      assets: 'build',
+      fallback: 'index.html' // ensures client routing works
+    }),
+    paths: {
+      base: '',
+      assets: ''
+    },
+    alias: {
+      $components: './src/components',
+    },
+    prerender: {
+      handleHttpError: 'warn'
+    }
+  }
 };
-
-export default config;
