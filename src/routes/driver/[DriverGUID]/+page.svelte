@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { DriverRow } from '$lib/db';
+	import type { Driver } from '$lib/drivers';
 	
-	let { data } = $props<{ data: { driver: DriverRow } }>();
+	let { data } = $props<{ data: { driver: Driver } }>();
 	let driver = $derived(data.driver);
 	
 	function getBadgeStyle(license: string): string {
@@ -34,19 +34,19 @@
 	
 	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
 		<h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-			{driver['Driver Name']}
+			{driver.driver || 'Unknown Driver'}
 		</h1>
 		
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="space-y-4">
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Rank</p>
-					<p class="text-2xl font-bold text-gray-900 dark:text-white">#{driver.Rank}</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">#{driver.rank || 'N/A'}</p>
 				</div>
 				
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">ELO Rating</p>
-					<p class="text-2xl font-bold text-gray-900 dark:text-white">{driver.ELO}</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">{driver.elo || 'N/A'}</p>
 				</div>
 			</div>
 			
@@ -54,8 +54,8 @@
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">License</p>
 					<div class="mt-2">
-						<span style={getBadgeStyle(driver.License)} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
-							{driver.License}
+						<span style={getBadgeStyle(driver.license || '')} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
+							{driver.license || 'N/A'}
 						</span>
 					</div>
 				</div>
@@ -63,8 +63,8 @@
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Safety Rating</p>
 					<div class="mt-2">
-						<span style={getSafetyBadgeStyle(driver['Safety Rating'])} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
-							{driver['Safety Rating']}
+						<span style={getSafetyBadgeStyle(driver.safety_rating || '')} class="inline-block px-4 py-2 rounded-md border text-lg font-semibold">
+							{driver.safety_rating || 'N/A'}
 						</span>
 					</div>
 				</div>
@@ -73,7 +73,7 @@
 		
 		<div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
 			<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Driver GUID</p>
-			<p class="text-sm text-gray-600 dark:text-gray-400 font-mono mt-1">{driver.DriverGUID}</p>
+			<p class="text-sm text-gray-600 dark:text-gray-400 font-mono mt-1">{driver.driver_guid || 'N/A'}</p>
 		</div>
 	</div>
 </div>

@@ -198,7 +198,7 @@
                         
                         <div class="flex flex-wrap gap-2 mb-3">
                             {#if championship.season}
-                                <Badge color="blue">{championship.season}</Badge>
+                                <Badge color="blue">Season {championship.season}</Badge>
                             {/if}
                             {#if championship.status}
                                 <Badge color={championship.status === 'running' ? 'green' : championship.status === 'finished' ? 'gray' : 'yellow'}>
@@ -238,7 +238,7 @@
                         <Button 
                             color="blue" 
                             class="w-full"
-                            onclick={() => navigateToLeague(championship.id)}
+                            onclick={() => navigateToLeague(championship.championship_id)}
                         >
                             View League Details
                         </Button>

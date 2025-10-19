@@ -10,18 +10,28 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import type { DriverRow } from '$lib/db';
+	import type { Driver } from '$lib/drivers';
 
 	// Props from server
-	let { data } = $props<{ data: { drivers: DriverRow[] } }>();
-	let drivers: DriverRow[] = data?.drivers ?? [];
+	let { data } = $props<{ data: { drivers: Driver[] } }>();
+	let drivers: Driver[] = data?.drivers ?? [];
 	let isLoading = drivers.length === 0;
+
+	// Transform drivers data to match table format
+	let tableData = $derived(drivers.map(driver => ({
+		RANK: driver.rank || 0,
+		DRIVER: driver.driver || '',
+		ELO: driver.elo || 0,
+		LICENSE: driver.license || '',
+		'SAFETY RATING': driver.safety_rating || '',
+		DriverGUID: driver.driver_guid || 0
+	})));
 
 	const renderDriverName = (data: any) => {
 		// Find the driver data by matching the driver name
-		const driver = drivers.find(d => d.Driver === data);
+		const driver = drivers.find(d => d.driver === data);
 		if (!driver) return data;
-		return `<a href="/${driver.DriverGUID}">${driver.Driver}</a>`;
+		return `<a href="/driver/${driver.driver_guid}">${driver.driver}</a>`;
 	};
 
 	// --------------------------
@@ -94,11 +104,6 @@
 		}
 	}
 
-	const renderUsername = (data: any) => {
-		const value = String(data ?? '');
-		return `localhost:5137/${data}`;
-	};
-
 	const renderLicenseBadge = (data: any) => {
 		const value = String(data ?? '');
 		const style = getBadgeStyle(value);
@@ -125,16 +130,16 @@
 				select: 3,
 				render: renderLicenseBadge,
 				type: 'string',
-				cellAttributes: (row: DriverRow) => ({
-					'data-order': getLicenseSortValue(row.License).toString()
+				cellAttributes: (row: any) => ({
+					'data-order': getLicenseSortValue(row.LICENSE || '').toString()
 				})
 			},
 			{
 				select: 4,
 				render: renderSafetyBadge,
 				type: 'string',
-				cellAttributes: (row: DriverRow) => ({
-					'data-order': getSafetySortValue(row['Safety Rating']).toString()
+				cellAttributes: (row: any) => ({
+					'data-order': getSafetySortValue(row['SAFETY RATING'] || '').toString()
 				})
 			},{ select: 5, hidden: true },
 		]
@@ -193,6 +198,6 @@
 	{:else if drivers.length === 0}
 		<p class="py-8 text-center text-gray-400">No driver data available.</p>
 	{:else}
-		<Table items={drivers} dataTableOptions={tableOptions} />
+		<Table items={tableData} dataTableOptions={tableOptions} />
 	{/if}
 </div>
