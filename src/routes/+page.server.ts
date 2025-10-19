@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { getEvents } from '$lib/db';
+import { getEvents } from '$lib/events';
+import { getRaceStats } from '$lib/stats';
 
 type EventItem = {
 	title: string;
@@ -7,55 +8,67 @@ type EventItem = {
 	time: number; // timestamp in milliseconds
 };
 
-import { supabase } from "$lib/supabaseClient";
-
-function extractAnchor(html: string): { title: string; href: string } {
-	if (!html) return { title: '', href: '' };
-
-	// Match href="..." or href='...' or href={...}
-	const hrefMatch = html.match(/href\s*=\s*"([^"]+)"|href\s*=\s*'([^']+)'|href\s*=\s*{([^}]+)}/i);
-
-	// Get whichever group matched
-	const rawHref = hrefMatch?.[1] || hrefMatch?.[2] || hrefMatch?.[3] || '';
-
-	// Preserve JSX-style curly braces exactly if they exist
-	const href =
-		rawHref.includes('{') || rawHref.startsWith('item.')
-			? `{${rawHref.replace(/^{|}$/g, '').trim()}}`
-			: normalizeUrl(rawHref);
-
-	// Extract link text (innerHTML)
-	const textMatch = html.match(/>([^<]+)<\/a>/i);
-	const title = (textMatch?.[1] ?? '').trim();
-
-	return { title, href };
-}
-
-function normalizeUrl(url: string): string {
-	if (!url) return '';
-	const trimmed = url.trim();
-	if (/^\{.*\}$/.test(trimmed) || trimmed.includes('{')) return trimmed;
-	if (/^https?:\/\//i.test(trimmed)) return trimmed;
-	return `https://${trimmed.replace(/^\/+/, '')}`;
-}
+type Stats = {
+	discordMembers: number;
+	totalRaces: number;
+	simGames: number;
+	yearsOfExperience: number;
+};
 
 export const load: PageServerLoad = async () => {
 	
 	try {
 		const dbEvents = await getEvents();
 		
-		const events: EventItem[] = dbEvents.map(dbEvent => {
-			const { title, href } = extractAnchor(dbEvent.event);
-			return {
-				title,
-				href,
-				time: dbEvent.time
-			};
-		}).filter(event => event.title || event.href);
+		const events: EventItem[] = dbEvents.map(dbEvent => ({
+			title: dbEvent.event || '',
+			href: '',
+			time: dbEvent.time
+		})).filter(event => event.title);
 
-		return { events };
+		// Get dynamic stats
+		const raceStats = await getRaceStats();
+		
+		// Get Discord member count
+		let discordMembers = 850; // Fallback
+		try {
+			// Use the Discord API directly instead of our endpoint during SSR
+			const response = await fetch(
+				`https://discord.com/api/v9/invites/c3N6ZkAEue?with_counts=true&with_expiration=true`,
+				{
+					method: 'GET',
+					headers: {
+						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+					}
+				}
+			);
+			
+			if (response.ok) {
+				const data = await response.json();
+				discordMembers = data.approximate_member_count || 850;
+			}
+		} catch (error) {
+			console.error('Error fetching Discord stats:', error);
+		}
+
+		const stats: Stats = {
+			discordMembers,
+			totalRaces: raceStats.totalRaces,
+			simGames: raceStats.totalSimGames,
+			yearsOfExperience: raceStats.yearsOfExperience
+		};
+
+		return { events, stats };
 	} catch (error) {
 		console.error('Error loading events:', error);
-		return { events: [] };
+		return { 
+			events: [],
+			stats: {
+				discordMembers: 850,
+				totalRaces: 1673,
+				simGames: 3,
+				yearsOfExperience: 4
+			}
+		};
 	}
 };

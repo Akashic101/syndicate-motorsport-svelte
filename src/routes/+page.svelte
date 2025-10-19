@@ -9,10 +9,20 @@
 		TableBodyCell
 	} from 'flowbite-svelte';
 	import { DiscordSolid } from 'flowbite-svelte-icons';
-	let { data } = $props<{ data: { events: { title: string; href: string; time: number }[] } }>();
+	let { data } = $props<{ 
+		data: { 
+			events: { title: string; href: string; time: number }[];
+			stats: {
+				discordMembers: number;
+				totalRaces: number;
+				simGames: number;
+				yearsOfExperience: number;
+			};
+		} 
+	}>();
 	import { m } from "$lib/paraglide/messages.js"
 
-	// Function to format time in user's local timezone with BST fallback
+	// Function to format time consistently in BST
 	function formatEventTime(timestamp: number): string {
 		try {
 			// Convert to integer if it's a floating point number
@@ -25,12 +35,9 @@
 				return 'Invalid date';
 			}
 
-			// Try to get user's timezone
-			const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			
-			// Format the date in user's local timezone
-			const localTime = date.toLocaleString('en-US', {
-				timeZone: userTimezone,
+			// Always format in BST (Europe/London timezone)
+			const bstTime = date.toLocaleString('en-US', {
+				timeZone: 'Europe/London',
 				weekday: 'long',
 				year: 'numeric',
 				month: 'long',
@@ -40,32 +47,16 @@
 				hour12: true
 			});
 
-			// Get timezone abbreviation
+			// Get BST/GMT abbreviation
 			const timeZoneName = date.toLocaleString('en-US', {
-				timeZone: userTimezone,
+				timeZone: 'Europe/London',
 				timeZoneName: 'short'
-			}).split(' ').pop() || '';
+			}).split(' ').pop() || 'BST';
 
-			return `${localTime} ${timeZoneName}`;
+			return `${bstTime} ${timeZoneName}`;
 		} catch (error) {
-			// Fallback to BST if timezone detection fails
-			try {
-				const intTimestamp = Math.floor(timestamp);
-				const date = new Date(intTimestamp);
-				const bstTime = date.toLocaleString('en-US', {
-					timeZone: 'Europe/London',
-					weekday: 'long',
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric',
-					hour: 'numeric',
-					minute: '2-digit',
-					hour12: true
-				});
-				return `${bstTime} BST`;
-			} catch (fallbackError) {
-				return 'Invalid date';
-			}
+			console.error('Error formatting event time:', error);
+			return 'Invalid date';
 		}
 	}
 </script>
@@ -151,22 +142,22 @@
 		<div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Discord Members</div>
-				<div class="mt-4 text-2xl font-semibold text-white">850</div>
+				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.discordMembers.toLocaleString()}</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-blue-400"></div>
 			</div>
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Races held</div>
-				<div class="mt-4 text-2xl font-semibold text-white">1673</div>
+				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.totalRaces.toLocaleString()}</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-rose-400"></div>
 			</div>
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Sim games</div>
-				<div class="mt-4 text-2xl font-semibold text-white">3</div>
+				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.simGames}</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-green-500"></div>
 			</div>
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Years of experience</div>
-				<div class="mt-4 text-2xl font-semibold text-white">4+</div>
+				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.yearsOfExperience}+</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-amber-400"></div>
 			</div>
 		</div>
