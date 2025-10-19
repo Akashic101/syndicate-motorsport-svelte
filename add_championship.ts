@@ -65,6 +65,41 @@ async function addNewChampionship() {
                 default: ''
             },
             {
+                type: 'input',
+                name: 'image_path',
+                message: 'Enter Image Path (e.g., /images/championship-logo.png) (optional):',
+                default: ''
+            },
+            {
+                type: 'input',
+                name: 'start_date',
+                message: 'Enter Start Date (YYYY-MM-DD) (optional):',
+                default: ''
+            },
+            {
+                type: 'input',
+                name: 'end_date',
+                message: 'Enter End Date (YYYY-MM-DD) (optional):',
+                default: ''
+            },
+            {
+                type: 'number',
+                name: 'round_count',
+                message: 'Enter Number of Rounds (optional):',
+                default: 0
+            },
+            {
+                type: 'list',
+                name: 'status',
+                message: 'Select Championship Status:',
+                choices: [
+                    { name: 'Planned', value: 'planned' },
+                    { name: 'Running', value: 'running' },
+                    { name: 'Finished', value: 'finished' }
+                ],
+                default: 'planned'
+            },
+            {
                 type: 'confirm',
                 name: 'confirm',
                 message: 'Do you want to add this championship to the database?',
@@ -83,7 +118,12 @@ async function addNewChampionship() {
             description: answers.description.trim(),
             season: answers.season.trim(),
             discord_invite: answers.discord_invite.trim() || null,
-            website: answers.website.trim() || null
+            website: answers.website.trim() || null,
+            image_path: answers.image_path.trim() || null,
+            start_date: answers.start_date.trim() || null,
+            end_date: answers.end_date.trim() || null,
+            round_count: answers.round_count || 0,
+            status: answers.status || 'planned'
         };
 
         console.log('\n⏳ Adding championship to database...');

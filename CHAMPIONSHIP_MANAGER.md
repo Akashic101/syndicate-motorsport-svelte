@@ -33,7 +33,46 @@ This tool allows you to add new championships to the database through an interac
    - Enter the Season (e.g., "Season 1", "2024", etc.)
    - Enter Discord Invite URL (optional)
    - Enter Website URL (optional)
+   - Enter Image Path (optional) - e.g., `/images/championships/logo.png`
+   - Enter Start Date (optional) - e.g., `2024-01-15`
+   - Enter End Date (optional) - e.g., `2024-12-15`
+   - Enter Number of Rounds (optional) - e.g., `12`
+   - Select Championship Status - Planned, Running, or Finished
    - Confirm to add the championship
+
+## Image Requirements
+
+When adding an image path for a championship:
+- Use a path relative to the `static` directory (e.g., `/images/championships/logo.png`)
+- **Recommended dimensions**: 400x300 pixels (4:3 aspect ratio)
+- **Alternative sizes**: 800x600px (high-res) or 600x450px (balanced)
+- **File size**: Keep under 200KB for optimal loading
+- **Supported formats**: PNG (best for logos), JPG (photos), WebP (modern), SVG (vector)
+- **Aspect ratio**: 4:3 works perfectly with the card layout
+- Images will be displayed at the top of championship cards (192px height)
+- If the image fails to load, it will be hidden automatically
+
+## Championship Information Fields
+
+### Required Fields
+- **Championship ID**: Unique identifier from the API endpoint
+- **Championship Name**: Display name for the championship
+- **Description**: Brief description of the championship
+
+### Optional Fields
+- **Season**: Season identifier (e.g., "Season 1", "2024")
+- **Discord Invite URL**: Link to championship Discord server
+- **Website URL**: Official championship website
+- **Image Path**: Path to championship logo/image
+- **Start Date**: Championship start date (YYYY-MM-DD format)
+- **End Date**: Championship end date (YYYY-MM-DD format)
+- **Round Count**: Number of rounds in the championship
+- **Status**: Championship status (Planned, Running, Finished)
+
+### Status Colors
+- **Planned**: Yellow badge - Championship is scheduled but not yet started
+- **Running**: Green badge - Championship is currently active
+- **Finished**: Gray badge - Championship has concluded
 
 ## Example
 

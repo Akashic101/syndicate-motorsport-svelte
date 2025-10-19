@@ -22,6 +22,34 @@
 
     let selectedTab = $state('drivers');
 
+    // Date formatting function
+    function formatDate(dateString: string): string {
+        if (!dateString) return '';
+        
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString; // Return original if invalid
+        
+        const options: Intl.DateTimeFormatOptions = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    // Format date range
+    function formatDateRange(startDate: string, endDate: string): string {
+        if (!startDate && !endDate) return '';
+        if (startDate && endDate) {
+            return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+        } else if (startDate) {
+            return `Starts ${formatDate(startDate)}`;
+        } else if (endDate) {
+            return `Ends ${formatDate(endDate)}`;
+        }
+        return '';
+    }
+
     // Country code mapping (3-letter to 2-letter ISO codes)
     const countryCodeMap: Record<string, string> = {
         'IRL': 'IE',  // Ireland
@@ -167,12 +195,32 @@
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {data.championship.name}
             </h1>
-            {#if data.championship.season}
-                <Badge color="blue" class="mb-4">{data.championship.season}</Badge>
-            {/if}
+            <div class="flex flex-wrap justify-center gap-2 mb-4">
+                {#if data.championship.season}
+                    <Badge color="blue">{data.championship.season}</Badge>
+                {/if}
+                {#if data.championship.status}
+                    <Badge color={data.championship.status === 'running' ? 'green' : data.championship.status === 'finished' ? 'gray' : 'yellow'}>
+                        {data.championship.status.charAt(0).toUpperCase() + data.championship.status.slice(1)}
+                    </Badge>
+                {/if}
+                {#if data.championship.round_count > 0}
+                    <Badge color="purple">{data.championship.round_count} Rounds</Badge>
+                {/if}
+            </div>
+            
             <p class="text-gray-600 dark:text-gray-400 mb-4">
                 {data.championship.description}
             </p>
+            
+            <!-- Date and Round Information -->
+            {#if data.championship.start_date || data.championship.end_date || data.championship.round_count > 0}
+                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {#if data.championship.start_date || data.championship.end_date}
+                        <p>📅 {formatDateRange(data.championship.start_date, data.championship.end_date)}</p>
+                    {/if}
+                </div>
+            {/if}
             
             <!-- External Links -->
             <div class="flex justify-center space-x-4 mb-4">

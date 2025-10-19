@@ -34,6 +34,10 @@ function initializeDatabase(): Promise<void> {
                     discord_invite TEXT,
                     website TEXT,
                     image_path TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    round_count INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'planned',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `, (err) => {
@@ -42,9 +46,33 @@ function initializeDatabase(): Promise<void> {
                     return;
                 }
 
-                // Add image_path column if it doesn't exist (for existing databases)
+                // Add new columns if they don't exist (for existing databases)
                 database.run(`
                     ALTER TABLE championships ADD COLUMN image_path TEXT DEFAULT ''
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
+                
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN start_date TEXT DEFAULT ''
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
+                
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN end_date TEXT DEFAULT ''
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
+                
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN round_count INTEGER DEFAULT 0
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
+                
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN status TEXT DEFAULT 'planned'
                 `, (err) => {
                     // Ignore error if column already exists
                 });
@@ -64,19 +92,51 @@ function initializeDatabase(): Promise<void> {
                                 name: 'BTCC Championship 2024',
                                 description: 'British Touring Car Championship featuring Honda Civic, Toyota Avensis, BMW 125i, Audi RS3, Ford Focus, and Alfa Romeo Giulietta',
                                 season: 'Season 1',
+                                image_path: '/images/championships/btcc-championship.png',
+                                start_date: '2024-01-15',
+                                end_date: '2024-12-15',
+                                round_count: 12,
+                                status: 'finished'
                             },
                             {
                                 id: '934c2506-1aa3-42da-9a1f-713093b41d3c',
                                 name: 'Radical SR3XXR Championship',
                                 description: 'Radical SR3XXR championship featuring high-performance prototype racing cars',
                                 season: 'Season 1',
+                                image_path: '/images/championships/radical-championship.png',
+                                start_date: '2024-02-01',
+                                end_date: '2024-11-30',
+                                round_count: 8,
+                                status: 'finished'
+                            },
+                            {
+                                id: 'test-running-2025',
+                                name: 'Formula 1 Championship 2025',
+                                description: 'Current Formula 1 season with all teams and drivers',
+                                season: 'Season 2025',
+                                image_path: '/images/championships/f1-2025.png',
+                                start_date: '2025-03-15',
+                                end_date: '2025-12-07',
+                                round_count: 24,
+                                status: 'running'
+                            },
+                            {
+                                id: 'test-planned-2025',
+                                name: 'Le Mans 24 Hours 2025',
+                                description: 'Endurance racing championship featuring prototype and GT cars',
+                                season: 'Season 2025',
+                                image_path: '/images/championships/lemans-2025.png',
+                                start_date: '2025-06-14',
+                                end_date: '2025-06-15',
+                                round_count: 1,
+                                status: 'planned'
                             }
                         ];
 
                         // Insert sample data
                         const insertStmt = database.prepare(`
-                            INSERT INTO championships (id, name, description, season, discord_invite, website, image_path)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         `);
 
                         sampleChampionships.forEach(championship => {
@@ -87,7 +147,11 @@ function initializeDatabase(): Promise<void> {
                                 championship.season,
                                 '',
                                 '',
-                                ''
+                                championship.image_path,
+                                championship.start_date,
+                                championship.end_date,
+                                championship.round_count,
+                                championship.status
                             );
                         });
 
@@ -152,14 +216,18 @@ export function addChampionship(championship: {
     discord_invite?: string;
     website?: string;
     image_path?: string;
+    start_date?: string;
+    end_date?: string;
+    round_count?: number;
+    status?: string;
 }): Promise<any> {
     return new Promise(async (resolve, reject) => {
         try {
             await initializeDatabase();
             const database = getDatabase();
             const stmt = database.prepare(`
-                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website, image_path)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             
             stmt.run(
@@ -170,6 +238,10 @@ export function addChampionship(championship: {
                 championship.discord_invite || '',
                 championship.website || '',
                 championship.image_path || '',
+                championship.start_date || '',
+                championship.end_date || '',
+                championship.round_count || 0,
+                championship.status || 'planned',
                 function(this: { changes: number }, err: any) {
                     if (err) return reject(err);
                     resolve({ id: championship.id, changes: this.changes });
