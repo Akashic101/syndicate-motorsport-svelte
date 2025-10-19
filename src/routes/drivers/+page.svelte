@@ -21,7 +21,7 @@
 		// Find the driver data by matching the driver name
 		const driver = drivers.find(d => d.Driver === data);
 		if (!driver) return data;
-		return `<a href="http://localhost:5173/${driver.DriverGUID}">${driver.Driver}</a>`;
+		return `<a href="/${driver.DriverGUID}">${driver.Driver}</a>`;
 	};
 
 	// --------------------------
