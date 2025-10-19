@@ -1,5 +1,5 @@
 import type { PageServerLoad } from "../$types";
-import { getLapRecords, type LapRecordRow } from '$lib/db';
+import { getLapRecords, type LapRecordRow } from '$lib/lapRecords';
 
 export const load: PageServerLoad = async () => {
     try {

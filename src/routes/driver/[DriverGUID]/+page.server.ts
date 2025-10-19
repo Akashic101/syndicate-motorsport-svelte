@@ -5,9 +5,10 @@ import { error } from '@sveltejs/kit';
 export const load: PageServerLoad = async ({ params }) => {
     const { DriverGUID } = params;
     
-    // Convert string to number for Supabase query
-    const driverGUID = parseInt(DriverGUID);
-    if (isNaN(driverGUID)) {
+    // Keep GUID as string since it's too large for safe integer conversion
+    const driverGUID = DriverGUID;
+    
+    if (!driverGUID || driverGUID.trim() === '') {
         throw error(400, 'Invalid driver GUID');
     }
     
@@ -17,7 +18,6 @@ export const load: PageServerLoad = async ({ params }) => {
         throw error(404, 'Driver not found');
     }
     
-    console.log(driver)
     return {
         driver
     };

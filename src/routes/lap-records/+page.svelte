@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Table } from "@flowbite-svelte-plugins/datatable";
     import type { DataTableOptions } from "@flowbite-svelte-plugins/datatable";
-    import type { LapRecordRow } from '$lib/db';
+    import type { LapRecordRow } from '$lib/lapRecords';
   
     export let data: { lapRecords: LapRecordRow[] };
     
@@ -80,6 +80,6 @@
   </script>
   
   <div class="m-8">
-    <Table items={lapRecords} dataTableOptions={tableOptions} />
+    <Table items={lapRecords as any} dataTableOptions={tableOptions} />
   </div>
   

@@ -16,59 +16,13 @@ export interface Championship {
   server: string | null;
 }
 
-export interface ChampionshipInsert {
-  name?: string;
-  description?: string;
-  season?: number;
-  image_path?: string;
-  start_date?: string;
-  end_date?: string;
-  round_count?: number;
-  status?: string;
-  sign_up_link?: string;
-  championship_id?: string;
-  server?: string;
-}
-
-export interface ChampionshipUpdate {
-  name?: string;
-  description?: string;
-  season?: number;
-  image_path?: string;
-  start_date?: string;
-  end_date?: string;
-  round_count?: number;
-  status?: string;
-  sign_up_link?: string;
-  championship_id?: string;
-  server?: string;
-}
-
 export interface Driver {
   id: number;
   created_at: string; // timestamp with time zone
-  driver_guid: number | null;
+  driver_guid: string | null;
   rank: number | null;
   driver: string | null;
   elo: number | null;
   license: string | null;
   safety_rating: string | null;
-}
-
-export interface DriverInsert {
-  driver_guid?: number;
-  rank?: number;
-  driver?: string;
-  elo?: number;
-  license?: string;
-  safety_rating?: string;
-}
-
-export interface DriverUpdate {
-  driver_guid?: number;
-  rank?: number;
-  driver?: string;
-  elo?: number;
-  license?: string;
-  safety_rating?: string;
 }
