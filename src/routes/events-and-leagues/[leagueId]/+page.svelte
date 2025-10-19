@@ -248,6 +248,17 @@
                         Visit Website
                     </a>
                 {/if}
+                
+                {#if data.championship.status === 'running' && data.championship.sign_up_link}
+                    <a 
+                        href={data.championship.sign_up_link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800"
+                    >
+                        Sign Up Now
+                    </a>
+                {/if}
             </div>
             
             {#if data.stats}

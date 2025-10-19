@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const dbPath = path.resolve(process.cwd(), 'championships.db');
+const dbPath = path.resolve(process.cwd(), 'data.db');
 
 // Lazy database initialization
 let db: sqlite3.Database | null = null;
@@ -38,6 +38,7 @@ function initializeDatabase(): Promise<void> {
                     end_date TEXT,
                     round_count INTEGER DEFAULT 0,
                     status TEXT DEFAULT 'planned',
+                    sign_up_link TEXT DEFAULT '',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `, (err) => {
@@ -76,6 +77,12 @@ function initializeDatabase(): Promise<void> {
                 `, (err) => {
                     // Ignore error if column already exists
                 });
+                
+                database.run(`
+                    ALTER TABLE championships ADD COLUMN sign_up_link TEXT DEFAULT ''
+                `, (err) => {
+                    // Ignore error if column already exists
+                });
 
                 // Check if we already have data
                 database.get('SELECT COUNT(*) as count FROM championships', (err, row: any) => {
@@ -96,7 +103,8 @@ function initializeDatabase(): Promise<void> {
                                 start_date: '2024-01-15',
                                 end_date: '2024-12-15',
                                 round_count: 12,
-                                status: 'finished'
+                                status: 'finished',
+                                sign_up_link: ''
                             },
                             {
                                 id: '934c2506-1aa3-42da-9a1f-713093b41d3c',
@@ -107,7 +115,8 @@ function initializeDatabase(): Promise<void> {
                                 start_date: '2024-02-01',
                                 end_date: '2024-11-30',
                                 round_count: 8,
-                                status: 'finished'
+                                status: 'finished',
+                                sign_up_link: ''
                             },
                             {
                                 id: 'test-running-2025',
@@ -118,7 +127,8 @@ function initializeDatabase(): Promise<void> {
                                 start_date: '2025-03-15',
                                 end_date: '2025-12-07',
                                 round_count: 24,
-                                status: 'running'
+                                status: 'running',
+                                sign_up_link: 'https://example.com/signup/f1-2025'
                             },
                             {
                                 id: 'test-planned-2025',
@@ -129,14 +139,15 @@ function initializeDatabase(): Promise<void> {
                                 start_date: '2025-06-14',
                                 end_date: '2025-06-15',
                                 round_count: 1,
-                                status: 'planned'
+                                status: 'planned',
+                                sign_up_link: 'https://example.com/signup/lemans-2025'
                             }
                         ];
 
                         // Insert sample data
                         const insertStmt = database.prepare(`
-                            INSERT INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status, sign_up_link)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         `);
 
                         sampleChampionships.forEach(championship => {
@@ -151,7 +162,8 @@ function initializeDatabase(): Promise<void> {
                                 championship.start_date,
                                 championship.end_date,
                                 championship.round_count,
-                                championship.status
+                                championship.status,
+                                championship.sign_up_link
                             );
                         });
 
@@ -220,14 +232,15 @@ export function addChampionship(championship: {
     end_date?: string;
     round_count?: number;
     status?: string;
+    sign_up_link?: string;
 }): Promise<any> {
     return new Promise(async (resolve, reject) => {
         try {
             await initializeDatabase();
             const database = getDatabase();
             const stmt = database.prepare(`
-                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO championships (id, name, description, season, discord_invite, website, image_path, start_date, end_date, round_count, status, sign_up_link)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             
             stmt.run(
@@ -242,6 +255,7 @@ export function addChampionship(championship: {
                 championship.end_date || '',
                 championship.round_count || 0,
                 championship.status || 'planned',
+                championship.sign_up_link || '',
                 function(this: { changes: number }, err: any) {
                     if (err) return reject(err);
                     resolve({ id: championship.id, changes: this.changes });

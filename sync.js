@@ -26,7 +26,7 @@ const sheets = [
     ]
   },
   {
-    name: 'lap_data',
+    name: 'lap_records',
     url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXEpA0_3WvJmtxJTKZ97Bi8tbZWsjCZT892N4mNgdaMJyhO-Syh1Xn-Yf4KaGw9SAZjGRwjtCpjZb/pub?gid=462474009&single=true&output=csv',
     columns: [
       { header: 'DriverGUID', name: 'driver_guid', type: 'TEXT' },

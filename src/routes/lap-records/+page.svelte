@@ -1,10 +1,17 @@
 <script lang="ts">
     import { Table } from "@flowbite-svelte-plugins/datatable";
     import type { DataTableOptions } from "@flowbite-svelte-plugins/datatable";
-    import type { LapRecordRow } from './+page.server';
+    import type { LapRecordRow } from '$lib/db';
   
     export let data: { lapRecords: LapRecordRow[] };
-    const lapRecords: LapRecordRow[] = data.lapRecords ?? [];
+    
+    // Sort lap records by lap time (ascending - fastest first)
+    const lapRecords: LapRecordRow[] = (data.lapRecords ?? []).sort((a, b) => {
+        // Convert lap times to comparable format (remove colons and compare as numbers)
+        const timeA = a['Lap Time'].replace(/:/g, '');
+        const timeB = b['Lap Time'].replace(/:/g, '');
+        return timeA.localeCompare(timeB);
+    });
   
     const tableOptions: DataTableOptions = {
       paging: true,

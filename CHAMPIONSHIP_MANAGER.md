@@ -38,6 +38,7 @@ This tool allows you to add new championships to the database through an interac
    - Enter End Date (optional) - e.g., `2024-12-15`
    - Enter Number of Rounds (optional) - e.g., `12`
    - Select Championship Status - Planned, Running, or Finished
+   - Enter Sign-up Link (optional) - URL for championship registration
    - Confirm to add the championship
 
 ## Image Requirements
@@ -68,6 +69,7 @@ When adding an image path for a championship:
 - **End Date**: Championship end date (YYYY-MM-DD format)
 - **Round Count**: Number of rounds in the championship
 - **Status**: Championship status (Planned, Running, Finished)
+- **Sign-up Link**: URL for championship registration (displayed for running leagues)
 
 ### Status Colors
 - **Planned**: Yellow badge - Championship is scheduled but not yet started

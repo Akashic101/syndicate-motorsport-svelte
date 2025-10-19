@@ -88,17 +88,23 @@ async function addNewChampionship() {
                 message: 'Enter Number of Rounds (optional):',
                 default: 0
             },
-            {
-                type: 'list',
-                name: 'status',
-                message: 'Select Championship Status:',
-                choices: [
-                    { name: 'Planned', value: 'planned' },
-                    { name: 'Running', value: 'running' },
-                    { name: 'Finished', value: 'finished' }
-                ],
-                default: 'planned'
-            },
+        {
+            type: 'list',
+            name: 'status',
+            message: 'Select Championship Status:',
+            choices: [
+                { name: 'Planned', value: 'planned' },
+                { name: 'Running', value: 'running' },
+                { name: 'Finished', value: 'finished' }
+            ],
+            default: 'planned'
+        },
+        {
+            type: 'input',
+            name: 'sign_up_link',
+            message: 'Enter Sign-up Link (optional):',
+            default: ''
+        },
             {
                 type: 'confirm',
                 name: 'confirm',
@@ -123,7 +129,8 @@ async function addNewChampionship() {
             start_date: answers.start_date.trim() || null,
             end_date: answers.end_date.trim() || null,
             round_count: answers.round_count || 0,
-            status: answers.status || 'planned'
+            status: answers.status || 'planned',
+            sign_up_link: answers.sign_up_link.trim() || null
         };
 
         console.log('\n⏳ Adding championship to database...');
