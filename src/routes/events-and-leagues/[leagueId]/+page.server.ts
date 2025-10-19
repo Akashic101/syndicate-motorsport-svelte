@@ -7,7 +7,8 @@ export const load: PageServerLoad = async ({ params }) => {
         console.log('Loading league data for ID:', leagueId);
         
         // Get championship info from database first
-        const championshipData = await getChampionshipById(leagueId);
+        const championshipId = parseInt(leagueId);
+        const championshipData = championshipId ? await getChampionshipById(championshipId) : null;
         
         // API endpoint for championship standings
         const apiUrl = `http://138.201.226.34:8092/championship/${leagueId}/standings.json`;

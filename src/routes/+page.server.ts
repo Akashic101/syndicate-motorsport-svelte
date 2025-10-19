@@ -7,6 +7,8 @@ type EventItem = {
 	time: number; // timestamp in milliseconds
 };
 
+import { supabase } from "$lib/supabaseClient";
+
 function extractAnchor(html: string): { title: string; href: string } {
 	if (!html) return { title: '', href: '' };
 
@@ -38,6 +40,7 @@ function normalizeUrl(url: string): string {
 }
 
 export const load: PageServerLoad = async () => {
+	
 	try {
 		const dbEvents = await getEvents();
 		
