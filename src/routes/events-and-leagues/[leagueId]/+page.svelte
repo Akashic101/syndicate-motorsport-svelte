@@ -193,88 +193,113 @@
     </Breadcrumb>
 
     <!-- Championship Header -->
-    <Card class="mb-6">
-        <div class="text-center">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {data.championship.name}
-            </h1>
-            <div class="flex flex-wrap justify-center gap-2 mb-4">
-                {#if data.championship.season}
-                    <Badge color="blue">{data.championship.season}</Badge>
-                {/if}
-                {#if data.championship.status}
-                    <Badge color={data.championship.status === 'running' ? 'green' : data.championship.status === 'finished' ? 'gray' : 'yellow'}>
-                        {data.championship.status.charAt(0).toUpperCase() + data.championship.status.slice(1)}
-                    </Badge>
-                {/if}
-                {#if data.championship.round_count > 0}
-                    <Badge color="purple">{data.championship.round_count} Rounds</Badge>
-                {/if}
-            </div>
-            
-            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                {data.championship.description}
-            </p>
-            
-            <!-- Date and Round Information -->
-            {#if data.championship.start_date || data.championship.end_date || data.championship.round_count > 0}
-                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    {#if data.championship.start_date || data.championship.end_date}
-                        <p>📅 {formatDateRange(data.championship.start_date, data.championship.end_date)}</p>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Championship Info Card -->
+        <Card class="min-w-xl">
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white m-3">
+                    {data.championship.name}
+                </h1>
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    {#if data.championship.season}
+                        <Badge color="blue">Season {data.championship.season}</Badge>
+                    {/if}
+                    {#if data.championship.status}
+                        <Badge color={data.championship.status === 'running' ? 'green' : data.championship.status === 'finished' ? 'gray' : 'yellow'}>
+                            {data.championship.status.charAt(0).toUpperCase() + data.championship.status.slice(1)}
+                        </Badge>
+                    {/if}
+                    {#if data.championship.round_count > 0}
+                        <Badge color="purple">{data.championship.round_count} Rounds</Badge>
                     {/if}
                 </div>
-            {/if}
-            
-            <!-- External Links -->
-            <div class="flex justify-center space-x-4 mb-4">
-                {#if data.championship.discord_invite}
-                    <a 
-                        href={data.championship.discord_invite} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                        Join Discord Server
-                    </a>
+                
+                <p class="text-gray-600 dark:text-gray-400 mb-4">
+                    {data.championship.description}
+                </p>
+                
+                <!-- Date and Round Information -->
+                {#if data.championship.start_date || data.championship.end_date || data.championship.round_count > 0}
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        {#if data.championship.start_date || data.championship.end_date}
+                            <p>📅 {formatDateRange(data.championship.start_date, data.championship.end_date)}</p>
+                        {/if}
+                    </div>
                 {/if}
                 
-                {#if data.championship.website}
-                    <a 
-                        href={data.championship.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                        Visit Website
-                    </a>
-                {/if}
+                <!-- External Links -->
+                <div class="flex justify-center space-x-4 mb-4">
+                    {#if data.championship.discord_invite}
+                        <a 
+                            href={data.championship.discord_invite} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                            Join Discord Server
+                        </a>
+                    {/if}
+                    
+                    {#if data.championship.website}
+                        <a 
+                            href={data.championship.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                            Visit Website
+                        </a>
+                    {/if}
+                    
+                    {#if data.championship.status === 'running' && data.championship.sign_up_link}
+                        <a 
+                            href={data.championship.sign_up_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800"
+                        >
+                            Sign Up Now
+                        </a>
+                    {/if}
+                </div>
                 
-                {#if data.championship.status === 'running' && data.championship.sign_up_link}
-                    <a 
-                        href={data.championship.sign_up_link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800"
-                    >
-                        Sign Up Now
-                    </a>
+                {#if data.stats}
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600">{data.stats.driverCount}</div>
+                            <div class="text-sm text-gray-600">Drivers</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">{data.stats.teamCount}</div>
+                            <div class="text-sm text-gray-600">Teams</div>
+                        </div>
+                    </div>
                 {/if}
             </div>
-            
-            {#if data.stats}
-                <div class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">{data.stats.driverCount}</div>
-                        <div class="text-sm text-gray-600">Drivers</div>
+        </Card>
+
+        <!-- Championship Image Card -->
+        <Card class="min-w-xl">
+            <div class="text-center">
+                {#if data.championship.image_path}
+                    <div class="flex justify-center items-center h-full">
+                        <img 
+                            src={data.championship.image_path} 
+                            alt={data.championship.name || 'Championship Image'}
+                            class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                        />
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">{data.stats.teamCount}</div>
-                        <div class="text-sm text-gray-600">Teams</div>
+                {:else}
+                    <div class="flex justify-center items-center h-full min-h-[300px] text-gray-400 dark:text-gray-600">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🏁</div>
+                            <p class="text-lg">No image available</p>
+                        </div>
                     </div>
-                </div>
-            {/if}
-        </div>
-    </Card>
+                {/if}
+            </div>
+        </Card>
+    </div>
 
     <!-- Navigation Tabs -->
     <div class="mb-6">
