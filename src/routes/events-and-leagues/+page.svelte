@@ -76,9 +76,9 @@
         
         const query = searchQuery.toLowerCase();
         return (
-            championship.name.toLowerCase().includes(query) ||
-            championship.description.toLowerCase().includes(query) ||
-            championship.season.toLowerCase().includes(query)
+            championship.name?.toLowerCase().includes(query) ||
+            championship.description?.toLowerCase().includes(query) ||
+            championship.season?.toString().toLowerCase().includes(query)
         );
     })));
 
