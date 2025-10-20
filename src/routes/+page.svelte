@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Section, HeroHeader } from 'flowbite-svelte-blocks';
 	import {
 		Button,
 		Table,
@@ -6,11 +7,12 @@
 		TableHeadCell,
 		TableBody,
 		TableBodyRow,
-		TableBodyCell
+		TableBodyCell,
+		Video
 	} from 'flowbite-svelte';
-	import { DiscordSolid } from 'flowbite-svelte-icons';
-	let { data } = $props<{ 
-		data: { 
+	import { ArrowRightOutline, CalendarMonthSolid, DiscordSolid } from 'flowbite-svelte-icons';
+	let { data } = $props<{
+		data: {
 			events: { title: string; href: string; time: number }[];
 			stats: {
 				discordMembers: number;
@@ -18,9 +20,9 @@
 				simGames: number;
 				yearsOfExperience: number;
 			};
-		} 
+		};
 	}>();
-	import { m } from "$lib/paraglide/messages.js"
+	import { m } from '$lib/paraglide/messages.js';
 
 	// Function to format time consistently in BST
 	function formatEventTime(timestamp: number): string {
@@ -28,7 +30,7 @@
 			// Convert to integer if it's a floating point number
 			const intTimestamp = Math.floor(timestamp);
 			const date = new Date(intTimestamp);
-			
+
 			// Check if the date is valid
 			if (isNaN(date.getTime())) {
 				console.warn('Invalid timestamp:', timestamp, 'converted to:', intTimestamp);
@@ -48,10 +50,14 @@
 			});
 
 			// Get BST/GMT abbreviation
-			const timeZoneName = date.toLocaleString('en-US', {
-				timeZone: 'Europe/London',
-				timeZoneName: 'short'
-			}).split(' ').pop() || 'BST';
+			const timeZoneName =
+				date
+					.toLocaleString('en-US', {
+						timeZone: 'Europe/London',
+						timeZoneName: 'short'
+					})
+					.split(' ')
+					.pop() || 'BST';
 
 			return `${bstTime} ${timeZoneName}`;
 		} catch (error) {
@@ -62,22 +68,40 @@
 </script>
 
 <section class="relative w-full">
-	<img
-		src="/images/Merc-190E.jpg"
-		alt="Syndicate Motorsport"
+	<Video
+		src="/videos/intro.mp4"
 		class="h-[60vh] w-full object-cover object-center"
+		autoplay
+		muted
+		loop
+		playsinline
 	/>
-	<div class="absolute inset-0 flex items-center justify-center">
-		<Button
-			size="xl"
-			href="https://discord.gg/c3N6ZkAEue"
-			class="px-8 py-4 text-xl dark:text-black"
+	<div class="absolute p-4 inset-0 flex items-center justify-center">
+		<HeroHeader
+			h1Class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl dark:text-white text-center"
+			pClass="text-center max-w-2xl mb-6 dark:text-white font-normal lg:mb-8 md:text-lg lg:text-xl sm:px-0 lg:px-0 xl:px-0"
 		>
-			<span class="flex items-center gap-2">
-				<DiscordSolid class="h-6 w-6 shrink-0" />
-				{m.that_male_martin_read()}
-			</span>
-		</Button>
+			{#snippet h1()}Syndicate Motorsport{/snippet}
+			{#snippet paragraph()}From historic cars to modern day racing, Syndicate Motorsport is a community of sim racers who are passionate about the sport.{/snippet}
+			<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+				<Button
+					size="xl"
+					href="https://discord.gg/c3N6ZkAEue"
+					class="px-8 py-4 text-xl dark:text-black w-full sm:w-auto"
+				>
+					<span class="flex items-center gap-2">
+						<DiscordSolid class="h-6 w-6 shrink-0" />
+						{m.that_male_martin_read()}
+					</span>
+				</Button>
+				<Button size="xl" href="/events-and-leagues" class="px-8 py-4 text-xl dark:text-black w-full sm:w-auto">
+					<span class="flex items-center gap-2">
+						<CalendarMonthSolid class="h-6 w-6 shrink-0" />
+						See our leagues
+					</span>
+				</Button>
+			</div>
+		</HeroHeader>
 	</div>
 </section>
 
@@ -142,12 +166,16 @@
 		<div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Discord Members</div>
-				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.discordMembers.toLocaleString()}</div>
+				<div class="mt-4 text-2xl font-semibold text-white">
+					{data.stats.discordMembers.toLocaleString()}
+				</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-blue-400"></div>
 			</div>
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
 				<div class="text-slate-300">Races held</div>
-				<div class="mt-4 text-2xl font-semibold text-white">{data.stats.totalRaces.toLocaleString()}</div>
+				<div class="mt-4 text-2xl font-semibold text-white">
+					{data.stats.totalRaces.toLocaleString()}
+				</div>
 				<div class="absolute top-4 right-4 h-7 w-7 rounded-lg bg-rose-400"></div>
 			</div>
 			<div class="relative rounded-2xl bg-slate-900/60 p-6 shadow-sm">
