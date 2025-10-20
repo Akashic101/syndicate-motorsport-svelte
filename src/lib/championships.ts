@@ -43,3 +43,27 @@ export async function getChampionshipById(id: number): Promise<Championship | nu
         throw error;
     }
 }
+
+// Get championship by championship_id (UUID)
+export async function getChampionshipByChampionshipId(championshipId: string): Promise<Championship | null> {
+    try {
+        const { data, error } = await supabase
+            .from('championships')
+            .select('*')
+            .eq('championship_id', championshipId)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // No rows returned
+                return null;
+            }
+            throw error;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching championship by championship_id:', error);
+        throw error;
+    }
+}

@@ -1,22 +1,43 @@
 import type { PageServerLoad } from './$types';
-import { getChampionshipById } from '$lib/championships';
+import { getChampionshipByChampionshipId } from '$lib/championships';
+import { getServerById } from '$lib/servers';
 
 export const load: PageServerLoad = async ({ params }) => {
     try {
         const leagueId = params.leagueId;
-        console.log('Loading league data for ID:', leagueId);
         
-        // Get championship info from database first
-        const championshipId = parseInt(leagueId);
-        const championshipData = championshipId ? await getChampionshipById(championshipId) : null;
+        // Get championship info from database using championship_id (UUID)
+        const championshipData = await getChampionshipByChampionshipId(leagueId);
         
-        // API endpoint for championship standings
-        const apiUrl = `http://138.201.226.34:8092/championship/${leagueId}/standings.json`;
+        if (!championshipData) {
+            throw new Error(`Championship not found for ID: ${leagueId}`);
+        }
         
-        // Required cookies for API access
-        const cookies = '_acsm_cookies=MTc0Nzg1OTMzOXxEWDhFQVFMX2dBQUJFQUVRQUFCTF80QUFBUVp6ZEhKcGJtY01Fd0FSWTI5dmEybGxYM0J5WldabGNtVnVZMlVtYW5WemRHRndaVzVuZFM1cGJpOWhZM050TDNZeUxtTnZiMnRwWlZCeVpXWmxjbVZ1WTJVRUFnQUF8c5I9dyF55nVxW655zZ7S0IdWNJDT1sXrq3ne7IVPAOM=; current-server=MTc2MDY0MTMxM3xEWDhFQVFMX2dBQUJFQUVRQUFBZF80QUFBUVp6ZEhKcGJtY01DQUFHYzJWeWRtVnlBMmx1ZEFRQ0FBQT18PUUhNaCcQhKZ1mpmWoxn_E61XSo3W5OsZSWlsNrCPkY=; _acsm_data=MTc2MDg3MTAxMnxEWDhFQVFMX2dBQUJFQUVRQUFCSV80QUFBUVp6ZEhKcGJtY01EQUFLWVdOamIzVnVkRjlwWkFaemRISnBibWNNSmdBa09UUTJNREUzTUdFdE56ZGtOUzAwTURrNUxUaGtZakF0TWpZd1pqTTNObVpqTkdObXyRtI9abzBy2JMbkbd45_uk_H_so1UwpBys8wPL4Svr7w==';
+        if (!championshipData.server) {
+            throw new Error(`Server ID not configured for championship: ${championshipData.name || leagueId}`);
+        }
         
-        // Fetch data from API
+        // Get server configuration from database using server ID
+        const serverId = championshipData.server;
+        
+        if (!serverId) {
+            throw new Error(`Server ID not found for championship: ${championshipData.name || leagueId}`);
+        }
+        
+        const serverData = await getServerById(serverId);
+        
+        if (!serverData || !serverData.cookie || !serverData.url) {
+            throw new Error(`Server configuration not found or cookies/URL not configured for server ID: ${serverId}`);
+        }
+        
+        // API endpoint for championship standings using championship_id from URL
+        // Remove trailing slash from server URL to avoid double slashes
+        const baseUrl = serverData.url.endsWith('/') ? serverData.url.slice(0, -1) : serverData.url;
+        const apiUrl = `${baseUrl}/championship/${leagueId}/standings.json`;
+        
+        // Use cookies from database
+        const cookies = serverData.cookie;
+        
         const response = await fetch(apiUrl, {
             headers: {
                 'Cookie': cookies,
@@ -30,18 +51,18 @@ export const load: PageServerLoad = async ({ params }) => {
         
         const apiData = await response.json();
         
-                // Process driver standings data - handle multiple data structures
-                let driverStandings = [];
-                if (apiData.DriverStandings) {
-                    // Try different possible keys for driver standings
-                    const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500"];
-                    for (const key of possibleKeys) {
-                        if (apiData.DriverStandings[key]) {
-                            driverStandings = apiData.DriverStandings[key];
-                            break;
-                        }
-                    }
+        // Process driver standings data - handle multiple data structures
+        let driverStandings = [];
+        if (apiData.DriverStandings) {
+            // Try different possible keys for driver standings
+            const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500", "60s WSC 2L", "TCL 70s", "1923 GP", "WSC 1967 5L+"];
+            for (const key of possibleKeys) {
+                if (apiData.DriverStandings[key]) {
+                    driverStandings = apiData.DriverStandings[key];
+                    break;
                 }
+            }
+        }
         
         const drivers = driverStandings.map((driver: any, index: number) => ({
             position: index + 1,
@@ -54,18 +75,18 @@ export const load: PageServerLoad = async ({ params }) => {
             restrictor: driver.Car.Restrictor
         }));
         
-                // Process team standings data - handle multiple data structures
-                let teamStandings = [];
-                if (apiData.TeamStandings) {
-                    // Try different possible keys for team standings
-                    const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500"];
-                    for (const key of possibleKeys) {
-                        if (apiData.TeamStandings[key]) {
-                            teamStandings = apiData.TeamStandings[key];
-                            break;
-                        }
-                    }
+        // Process team standings data - handle multiple data structures
+        let teamStandings = [];
+        if (apiData.TeamStandings) {
+            // Try different possible keys for team standings
+            const possibleKeys = ["", "All", "Super GT Vs DTM", "Rookies", "GT500", "60s WSC 2L", "TCL 70s", "1923 GP", "WSC 1967 5L+"];
+            for (const key of possibleKeys) {
+                if (apiData.TeamStandings[key]) {
+                    teamStandings = apiData.TeamStandings[key];
+                    break;
                 }
+            }
+        }
         
         const teams = teamStandings.map((team: any, index: number) => ({
             position: index + 1,
@@ -73,15 +94,8 @@ export const load: PageServerLoad = async ({ params }) => {
             points: team.Points
         }));
         
-        // Use championship data from database, or fallback to generic info
-        const championship = championshipData || {
-            id: leagueId,
-            name: `Championship ${leagueId}`,
-            description: 'Championship standings from API',
-            season: '2024',
-            discord_invite: null,
-            website: null
-        };
+        // Use championship data from database
+        const championship = championshipData;
         
         // Calculate stats
         const stats = {

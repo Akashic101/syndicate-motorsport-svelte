@@ -13,7 +13,7 @@ export interface Championship {
   sign_up_link: string | null;
   created_at: string; // timestamp with time zone
   championship_id: string | null; // uuid
-  server: string | null;
+  server: number | null;
 }
 
 export interface Driver {
