@@ -3,10 +3,8 @@ import { getAllChampionships } from '$lib/championships';
 
 export const load: PageServerLoad = async () => {
     try {
-        console.log('Loading events and leagues data...');
         // Get all championships
         const championships = await getAllChampionships();
-        console.log('Found championships:', championships.length);
         
         return {
             championships

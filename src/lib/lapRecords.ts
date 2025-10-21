@@ -59,7 +59,6 @@ export async function getAllLapRecords(): Promise<LapRecord[]> {
     hasMore = batch.length === batchSize;
     offset += batchSize;
   }
-  console.table(allRecords)
   return allRecords;
 }
 
