@@ -11,8 +11,8 @@
 	let { children } = $props();
 	let activeUrl = $derived(page.url.pathname);
 
-	// Default Open Graph tags
-	const defaultOG = generateOpenGraphTags({
+	// Fallback Open Graph tags for pages that don't override them
+	const fallbackOG = generateOpenGraphTags({
 		title: 'Syndicate Motorsport - Professional Sim Racing Community',
 		description: 'Join Syndicate Motorsport, a professional sim racing community with championships, leagues, and competitive racing across multiple platforms.',
 		url: page.url.pathname
@@ -22,27 +22,26 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	
-	<!-- Default Open Graph Meta Tags -->
-	<title>{defaultOG.title}</title>
-	<meta name="description" content={defaultOG.description} />
-	<meta property="og:title" content={defaultOG['og:title']} />
-	<meta property="og:description" content={defaultOG['og:description']} />
-	<meta property="og:image" content={defaultOG['og:image']} />
-	<meta property="og:url" content={defaultOG['og:url']} />
-	<meta property="og:type" content={defaultOG['og:type']} />
-	<meta property="og:site_name" content={defaultOG['og:site_name']} />
-	<meta property="og:locale" content={defaultOG['og:locale']} />
+	<!-- Fallback Open Graph tags (will be overridden by page-specific ones) -->
+	<title>{fallbackOG.title}</title>
+	<meta name="description" content={fallbackOG.description} />
+	<meta property="og:title" content={fallbackOG['og:title']} />
+	<meta property="og:description" content={fallbackOG['og:description']} />
+	<meta property="og:image" content={fallbackOG['og:image']} />
+	<meta property="og:url" content={fallbackOG['og:url']} />
+	<meta property="og:type" content={fallbackOG['og:type']} />
+	<meta property="og:site_name" content={fallbackOG['og:site_name']} />
+	<meta property="og:locale" content={fallbackOG['og:locale']} />
 	
-	<!-- Twitter Card Meta Tags -->
-	<meta name="twitter:card" content={defaultOG['twitter:card']} />
-	<meta name="twitter:title" content={defaultOG['twitter:title']} />
-	<meta name="twitter:description" content={defaultOG['twitter:description']} />
-	<meta name="twitter:image" content={defaultOG['twitter:image']} />
+	<meta name="twitter:card" content={fallbackOG['twitter:card']} />
+	<meta name="twitter:title" content={fallbackOG['twitter:title']} />
+	<meta name="twitter:description" content={fallbackOG['twitter:description']} />
+	<meta name="twitter:image" content={fallbackOG['twitter:image']} />
 	
-	<!-- Additional Meta Tags -->
-	<meta name="robots" content={defaultOG.robots} />
-	<meta name="author" content={defaultOG.author} />
-	<meta name="viewport" content={defaultOG.viewport} />
+	<!-- Basic meta tags that apply to all pages -->
+	<meta name="robots" content="index, follow" />
+	<meta name="author" content="Syndicate Motorsport" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 </svelte:head>
 
 <Navbar>
