@@ -178,20 +178,27 @@
 										</p>
 									{/if}
 								</div>
-								<div class="inline-flex items-center">
+								<div class="flex flex-col items-center gap-2 lg:flex-row sm:gap-0">
+									<Button
+										size="sm"
+										href={`/events-and-leagues/${championship.championship_id}`}
+										class="text-black m-2"
+									>
+										View Info
+									</Button>
 									{#if championship.sign_up_link}
 										<Button
 											size="sm"
 											href={championship.sign_up_link}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="text-black"
+											class="text-black m-2"
 										>
 											Sign Up
 										</Button>
 									{:else}
 										<Button
-											class="text-black"
+											class="text-black m-2"
 											size="sm"
 											href="/events-and-leagues/{championship.championship_id}"
 										>
