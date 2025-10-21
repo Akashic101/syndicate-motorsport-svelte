@@ -18,7 +18,6 @@
       searchable: true,
       perPage: 25,
       perPageSelect: [10, 15, 20, 25, 50, 100],
-     
       tableRender: (data: any[], table: any, type: string) => {
         if (type === "print") {
           return table;

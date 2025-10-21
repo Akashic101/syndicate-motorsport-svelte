@@ -14,13 +14,20 @@ export interface LapRecord {
   lap_time: string | null;
 }
 
+export interface LapRecordRow {
+  driver: string | null;
+  track_name: string | null;
+  car_model: string | null;
+  platform: string | null;
+  lap_time: string | null;
+}
 
 // Get all lap records from Supabase
-export async function getLapRecords(limit?: number, offset?: number): Promise<LapRecord[]> {
+export async function getLapRecords(limit?: number, offset?: number): Promise<LapRecordRow[]> {
   try {
     let query = supabase
       .from('lap_records')
-      .select('*')
+      .select('driver, track_name, car_model, platform, lap_time')
       .order('lap_time', { ascending: true });
 
     // Apply pagination if parameters are provided
@@ -45,8 +52,8 @@ export async function getLapRecords(limit?: number, offset?: number): Promise<La
 }
 
 // Get all lap records with automatic pagination (handles datasets > 1000 records)
-export async function getAllLapRecords(): Promise<LapRecord[]> {
-  const allRecords: LapRecord[] = [];
+export async function getAllLapRecords(): Promise<LapRecordRow[]> {
+  const allRecords: LapRecordRow[] = [];
   const batchSize = 1000;
   let offset = 0;
   let hasMore = true;
