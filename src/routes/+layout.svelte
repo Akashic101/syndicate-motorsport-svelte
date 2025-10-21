@@ -6,13 +6,43 @@
 	import { getLocale, setLocale } from "../lib/paraglide/runtime";
 	import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { De, Gb } from 'svelte-flags';
+	import { generateOpenGraphTags } from '$lib/og';
 
 	let { children } = $props();
 	let activeUrl = $derived(page.url.pathname);
+
+	// Default Open Graph tags
+	const defaultOG = generateOpenGraphTags({
+		title: 'Syndicate Motorsport - Professional Sim Racing Community',
+		description: 'Join Syndicate Motorsport, a professional sim racing community with championships, leagues, and competitive racing across multiple platforms.',
+		url: page.url.pathname
+	});
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	
+	<!-- Default Open Graph Meta Tags -->
+	<title>{defaultOG.title}</title>
+	<meta name="description" content={defaultOG.description} />
+	<meta property="og:title" content={defaultOG['og:title']} />
+	<meta property="og:description" content={defaultOG['og:description']} />
+	<meta property="og:image" content={defaultOG['og:image']} />
+	<meta property="og:url" content={defaultOG['og:url']} />
+	<meta property="og:type" content={defaultOG['og:type']} />
+	<meta property="og:site_name" content={defaultOG['og:site_name']} />
+	<meta property="og:locale" content={defaultOG['og:locale']} />
+	
+	<!-- Twitter Card Meta Tags -->
+	<meta name="twitter:card" content={defaultOG['twitter:card']} />
+	<meta name="twitter:title" content={defaultOG['twitter:title']} />
+	<meta name="twitter:description" content={defaultOG['twitter:description']} />
+	<meta name="twitter:image" content={defaultOG['twitter:image']} />
+	
+	<!-- Additional Meta Tags -->
+	<meta name="robots" content={defaultOG.robots} />
+	<meta name="author" content={defaultOG.author} />
+	<meta name="viewport" content={defaultOG.viewport} />
 </svelte:head>
 
 <Navbar>

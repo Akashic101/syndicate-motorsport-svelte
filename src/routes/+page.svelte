@@ -13,6 +13,7 @@
 	} from 'flowbite-svelte';
 	import { ArrowRightOutline, CalendarMonthSolid, DiscordSolid } from 'flowbite-svelte-icons';
 	import type { Championship } from '$lib/types';
+	import { getHomeOGData } from '$lib/og';
 	let { data } = $props<{
 		data: {
 			events: { title: string; href: string; time: number }[];
@@ -26,6 +27,9 @@
 		};
 	}>();
 	import { m } from '$lib/paraglide/messages.js';
+
+	// Generate Open Graph data for home page
+	const ogData = getHomeOGData(data.stats);
 
 	// Function to format time consistently in BST
 	function formatEventTime(timestamp: number): string {
@@ -69,6 +73,23 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{ogData.title}</title>
+	<meta name="description" content={ogData.description} />
+	<meta property="og:title" content={ogData['og:title']} />
+	<meta property="og:description" content={ogData['og:description']} />
+	<meta property="og:image" content={ogData['og:image']} />
+	<meta property="og:url" content={ogData['og:url']} />
+	<meta property="og:type" content={ogData['og:type']} />
+	<meta property="og:site_name" content={ogData['og:site_name']} />
+	<meta property="og:locale" content={ogData['og:locale']} />
+	
+	<meta name="twitter:card" content={ogData['twitter:card']} />
+	<meta name="twitter:title" content={ogData['twitter:title']} />
+	<meta name="twitter:description" content={ogData['twitter:description']} />
+	<meta name="twitter:image" content={ogData['twitter:image']} />
+</svelte:head>
 
 <section class="relative w-full">
 	<Video

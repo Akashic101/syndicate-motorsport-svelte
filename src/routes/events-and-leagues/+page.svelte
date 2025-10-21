@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Card, Badge, Button, Input } from 'flowbite-svelte';
+    import { getEventsLeaguesOGData } from '$lib/og';
 
     // Props from server
     let { data } = $props<{ 
@@ -8,6 +9,9 @@
             error?: string
         } 
     }>();
+
+    // Generate Open Graph data for events and leagues page
+    const ogData = getEventsLeaguesOGData();
 
     // Search state
     let searchQuery = $state('');
@@ -93,6 +97,23 @@
         }
     }
 </script>
+
+<svelte:head>
+    <title>{ogData.title}</title>
+    <meta name="description" content={ogData.description} />
+    <meta property="og:title" content={ogData['og:title']} />
+    <meta property="og:description" content={ogData['og:description']} />
+    <meta property="og:image" content={ogData['og:image']} />
+    <meta property="og:url" content={ogData['og:url']} />
+    <meta property="og:type" content={ogData['og:type']} />
+    <meta property="og:site_name" content={ogData['og:site_name']} />
+    <meta property="og:locale" content={ogData['og:locale']} />
+    
+    <meta name="twitter:card" content={ogData['twitter:card']} />
+    <meta name="twitter:title" content={ogData['twitter:title']} />
+    <meta name="twitter:description" content={ogData['twitter:description']} />
+    <meta name="twitter:image" content={ogData['twitter:image']} />
+</svelte:head>
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
