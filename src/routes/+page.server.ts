@@ -1,6 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { getEvents } from '$lib/events';
 import { getRaceStats } from '$lib/stats';
+import { getAllChampionships } from '$lib/championships';
+import type { Championship } from '$lib/types';
 
 type EventItem = {
 	title: string;
@@ -25,6 +27,16 @@ export const load: PageServerLoad = async () => {
 			href: '',
 			time: dbEvent.time
 		})).filter(event => event.title);
+
+		// Get championships/leagues
+		const championships = await getAllChampionships();
+		
+		// Filter for running and planned championships (status is 'active', 'planned', or null/undefined)
+		const activeChampionships = championships.filter(champ => 
+			!champ.status || 
+			champ.status.toLowerCase() === 'running' || 
+			champ.status.toLowerCase() === 'planned'
+		);
 
 		// Get dynamic stats
 		const raceStats = await getRaceStats();
@@ -58,11 +70,12 @@ export const load: PageServerLoad = async () => {
 			yearsOfExperience: raceStats.yearsOfExperience
 		};
 
-		return { events, stats };
+		return { events, championships: activeChampionships, stats };
 	} catch (error) {
 		console.error('Error loading events:', error);
 		return { 
 			events: [],
+			championships: [],
 			stats: {
 				discordMembers: 850,
 				totalRaces: 1673,
