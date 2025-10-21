@@ -111,3 +111,13 @@ export function getEventsLeaguesOGData(baseUrl: string = 'https://syndicate-moto
 		type: 'website'
 	}, baseUrl);
 }
+
+export function getSupportUsOGData(baseUrl: string = 'https://syndicate-motorsport.com') {
+	return generateOpenGraphTags({
+		title: 'Support Us | Syndicate Motorsport',
+		description: 'Support Syndicate Motorsport through Patreon, join our Discord community, and help us grow our sim racing platform.',
+		image: `${baseUrl}/images/support_us.jpg`,
+		url: '/support-us',
+		type: 'website'
+	}, baseUrl);
+}

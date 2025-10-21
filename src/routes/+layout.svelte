@@ -6,37 +6,13 @@
 	import { getLocale, setLocale } from "../lib/paraglide/runtime";
 	import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { De, Gb } from 'svelte-flags';
-	import { generateOpenGraphTags } from '$lib/og';
 
 	let { children } = $props();
 	let activeUrl = $derived(page.url.pathname);
-
-	// Fallback Open Graph tags for pages that don't override them
-	const fallbackOG = generateOpenGraphTags({
-		title: 'Syndicate Motorsport - Professional Sim Racing Community',
-		description: 'Join Syndicate Motorsport, a professional sim racing community with championships, leagues, and competitive racing across multiple platforms.',
-		url: page.url.pathname
-	});
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	
-	<!-- Fallback Open Graph tags (will be overridden by page-specific ones) -->
-	<title>{fallbackOG.title}</title>
-	<meta name="description" content={fallbackOG.description} />
-	<meta property="og:title" content={fallbackOG['og:title']} />
-	<meta property="og:description" content={fallbackOG['og:description']} />
-	<meta property="og:image" content={fallbackOG['og:image']} />
-	<meta property="og:url" content={fallbackOG['og:url']} />
-	<meta property="og:type" content={fallbackOG['og:type']} />
-	<meta property="og:site_name" content={fallbackOG['og:site_name']} />
-	<meta property="og:locale" content={fallbackOG['og:locale']} />
-	
-	<meta name="twitter:card" content={fallbackOG['twitter:card']} />
-	<meta name="twitter:title" content={fallbackOG['twitter:title']} />
-	<meta name="twitter:description" content={fallbackOG['twitter:description']} />
-	<meta name="twitter:image" content={fallbackOG['twitter:image']} />
 	
 	<!-- Basic meta tags that apply to all pages -->
 	<meta name="robots" content="index, follow" />

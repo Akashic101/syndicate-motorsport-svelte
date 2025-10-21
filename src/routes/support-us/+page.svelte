@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { Button } from 'flowbite-svelte';
+	import { getSupportUsOGData } from '$lib/og';
+
+	// Generate Open Graph data for support page
+	const ogData = getSupportUsOGData();
 
 	const socialLinks = {
 		patreon: 'https://www.patreon.com/syndicate_motorsport',
@@ -96,6 +100,23 @@
 		}
 	];
 </script>
+
+<svelte:head>
+	<title>{ogData.title}</title>
+	<meta name="description" content={ogData.description} />
+	<meta property="og:title" content={ogData['og:title']} />
+	<meta property="og:description" content={ogData['og:description']} />
+	<meta property="og:image" content={ogData['og:image']} />
+	<meta property="og:url" content={ogData['og:url']} />
+	<meta property="og:type" content={ogData['og:type']} />
+	<meta property="og:site_name" content={ogData['og:site_name']} />
+	<meta property="og:locale" content={ogData['og:locale']} />
+	
+	<meta name="twitter:card" content={ogData['twitter:card']} />
+	<meta name="twitter:title" content={ogData['twitter:title']} />
+	<meta name="twitter:description" content={ogData['twitter:description']} />
+	<meta name="twitter:image" content={ogData['twitter:image']} />
+</svelte:head>
 
 <div class="bg-linear-180 from-[#1e2939] to-[#1a1a1a]">
 	<div class="container mx-auto px-4 py-8">
