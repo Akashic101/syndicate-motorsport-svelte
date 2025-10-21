@@ -1,13 +1,13 @@
 import type { PageServerLoad } from "../$types";
-import { getLapRecords, type LapRecordRow } from '$lib/lapRecords';
+import { getAllLapRecords, type LapRecord } from '$lib/lapRecords';
 
 export const load: PageServerLoad = async () => {
     try {
-        const lapRecords = await getLapRecords();
+        const lapRecords = await getAllLapRecords();
         return { lapRecords };
     } catch (error) {
         console.error('Error loading lap records:', error);
-        return { lapRecords: [] as LapRecordRow[] };
+        return { lapRecords: [] as LapRecord[] };
     }
 };
 

@@ -14,55 +14,57 @@ export interface LapRecord {
   lap_time: string | null;
 }
 
-// Legacy type for backward compatibility with existing components
-export interface LapRecordRow {
-  DriverGUID: string;
-  TrackName: string;
-  CarModel: string;
-  Platform: string;
-  BestLap: string;
-  Driver: string;
-  BestLap_Num: string;
-  'Lap Time': string;
-}
-
-// Convert Supabase LapRecord to legacy LapRecordRow format
-function convertToLegacyFormat(lapRecord: LapRecord): LapRecordRow {
-  return {
-    DriverGUID: lapRecord.driver_guid || '',
-    TrackName: lapRecord.track_name || '',
-    CarModel: lapRecord.car_model || '',
-    Platform: lapRecord.platform || '',
-    BestLap: lapRecord.best_lap || '',
-    Driver: lapRecord.driver || '',
-    BestLap_Num: lapRecord.best_lap_num?.toString() || '',
-    'Lap Time': lapRecord.lap_time || ''
-  };
-}
 
 // Get all lap records from Supabase
-export async function getLapRecords(): Promise<LapRecordRow[]> {
+export async function getLapRecords(limit?: number, offset?: number): Promise<LapRecord[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('lap_records')
       .select('*')
       .order('lap_time', { ascending: true });
+
+    // Apply pagination if parameters are provided
+    if (limit !== undefined) {
+      const start = offset || 0;
+      const end = start + limit - 1;
+      query = query.range(start, end);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching lap records:', error);
       throw error;
     }
 
-    // Convert to legacy format for backward compatibility
-    return (data || []).map(convertToLegacyFormat);
+    return data || [];
   } catch (error) {
     console.error('Error fetching lap records:', error);
     throw error;
   }
 }
 
+// Get all lap records with automatic pagination (handles datasets > 1000 records)
+export async function getAllLapRecords(): Promise<LapRecord[]> {
+  const allRecords: LapRecord[] = [];
+  const batchSize = 1000;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const batch = await getLapRecords(batchSize, offset);
+    allRecords.push(...batch);
+    
+    // If we got fewer records than requested, we've reached the end
+    hasMore = batch.length === batchSize;
+    offset += batchSize;
+  }
+  console.table(allRecords)
+  return allRecords;
+}
+
 // Get lap records by driver GUID
-export async function getLapRecordsByDriver(driverGUID: string): Promise<LapRecordRow[]> {
+export async function getLapRecordsByDriver(driverGUID: string): Promise<LapRecord[]> {
   try {
     const { data, error } = await supabase
       .from('lap_records')
@@ -75,7 +77,7 @@ export async function getLapRecordsByDriver(driverGUID: string): Promise<LapReco
       throw error;
     }
 
-    return (data || []).map(convertToLegacyFormat);
+    return data || [];
   } catch (error) {
     console.error('Error fetching lap records by driver:', error);
     throw error;
@@ -83,7 +85,7 @@ export async function getLapRecordsByDriver(driverGUID: string): Promise<LapReco
 }
 
 // Get lap records by track name
-export async function getLapRecordsByTrack(trackName: string): Promise<LapRecordRow[]> {
+export async function getLapRecordsByTrack(trackName: string): Promise<LapRecord[]> {
   try {
     const { data, error } = await supabase
       .from('lap_records')
@@ -96,7 +98,7 @@ export async function getLapRecordsByTrack(trackName: string): Promise<LapRecord
       throw error;
     }
 
-    return (data || []).map(convertToLegacyFormat);
+    return data || [];
   } catch (error) {
     console.error('Error fetching lap records by track:', error);
     throw error;
@@ -104,7 +106,7 @@ export async function getLapRecordsByTrack(trackName: string): Promise<LapRecord
 }
 
 // Get lap records by car model
-export async function getLapRecordsByCar(carModel: string): Promise<LapRecordRow[]> {
+export async function getLapRecordsByCar(carModel: string): Promise<LapRecord[]> {
   try {
     const { data, error } = await supabase
       .from('lap_records')
@@ -117,7 +119,7 @@ export async function getLapRecordsByCar(carModel: string): Promise<LapRecordRow
       throw error;
     }
 
-    return (data || []).map(convertToLegacyFormat);
+    return data || [];
   } catch (error) {
     console.error('Error fetching lap records by car:', error);
     throw error;
@@ -125,7 +127,7 @@ export async function getLapRecordsByCar(carModel: string): Promise<LapRecordRow
 }
 
 // Get lap records by platform
-export async function getLapRecordsByPlatform(platform: string): Promise<LapRecordRow[]> {
+export async function getLapRecordsByPlatform(platform: string): Promise<LapRecord[]> {
   try {
     const { data, error } = await supabase
       .from('lap_records')
@@ -138,7 +140,7 @@ export async function getLapRecordsByPlatform(platform: string): Promise<LapReco
       throw error;
     }
 
-    return (data || []).map(convertToLegacyFormat);
+    return data || [];
   } catch (error) {
     console.error('Error fetching lap records by platform:', error);
     throw error;
