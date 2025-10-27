@@ -1,4 +1,4 @@
-import { vitePreprocess } from '@sveltejs/kit/vite'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import IISAdapter from 'sveltekit-adapter-iis'
 
 /** @type {import('@sveltejs/kit').Config} */
