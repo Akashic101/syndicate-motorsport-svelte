@@ -3,9 +3,6 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { Navbar, NavBrand, NavHamburger, NavUl, NavLi, Button, Dropdown, Radio } from 'flowbite-svelte';
 	import { page } from '$app/state';
-	import { getLocale, setLocale } from "../lib/paraglide/runtime";
-	import { ChevronDownOutline } from 'flowbite-svelte-icons';
-	import { De, Gb } from 'svelte-flags';
 
 	let { children } = $props();
 	let activeUrl = $derived(page.url.pathname);
