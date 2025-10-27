@@ -1,22 +1,21 @@
-import adapter from '@sveltejs/adapter-static';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { vitePreprocess } from '@sveltejs/kit/vite'
+import IISAdapter from 'sveltekit-adapter-iis'
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
-	// for more information about preprocessors
-	preprocess: vitePreprocess(),
+  preprocess: vitePreprocess(),
 
-	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: 'index.html'
-		})
-	}
-};
+  kit: {
+    version: {
+      pollInterval: 300000,
+    },
+    adapter: IISAdapter({
+      // the hostname/port that the site will be hosted on in IIS.
+      // can be changed later in web.config
+      origin: 'http://localhost',
+      // ... other options
+    }),
+  },
+}
 
-export default config;
+export default config
