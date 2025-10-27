@@ -23,7 +23,7 @@
 <Navbar>
 	<NavBrand href="/">
 		<img
-			src="/images/Syndicate_Logo_Clock.png"
+			src="/images/Syndicate_Logo.svg"
 			class="me-3 h-6 sm:h-9"
 			alt="Syndicate Motorsport Logo"
 		/>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Card, Badge, Button, Input } from 'flowbite-svelte';
     import { getEventsLeaguesOGData } from '$lib/og';
+	import { BookOpenSolid } from 'flowbite-svelte-icons';
 
     // Props from server
     let { data } = $props<{ 
@@ -121,9 +122,23 @@
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Events and Leagues
         </h1>
-        <p class="text-gray-600 dark:text-gray-400 mb-6">
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
             Discover all available championships and racing leagues - Search enabled!
         </p>
+        
+        <!-- Rules Link Button -->
+        <div class="mb-6">
+            <Button 
+                href="https://docs.google.com/document/d/1INAGo4rZKlLax-fJ1BGadewKlU48TvNMUSk5d5u6OZo/edit?tab=t.0#heading=h.xidipkakl490"
+                color="blue"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2"
+            >
+                <BookOpenSolid />
+                View Rules & Regulations
+            </Button>
+        </div>
         
         <!-- Search Bar -->
         <div class="max-w-md relative">
