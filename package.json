@@ -56,6 +56,7 @@
 		"csvtojson": "^2.0.10",
 		"flowbite-svelte-blocks": "^2.1.0",
 		"node-cron": "^4.2.1",
-		"sqlite3": "^5.1.7"
+		"sqlite3": "^5.1.7",
+		"sveltekit-adapter-iis": "^1.5.0"
 	}
 }

@@ -12,7 +12,7 @@ export function generateOpenGraphTags(data: OpenGraphData, baseUrl: string = 'ht
 	const {
 		title = 'Syndicate Motorsport - Professional Sim Racing Community',
 		description = 'Join Syndicate Motorsport, a professional sim racing community with championships, leagues, and competitive racing across multiple platforms.',
-		image = `${baseUrl}/images/home.jpg`,
+		image = `${baseUrl}/images/Syndicate_Logo_Clock.png`,
 		url,
 		type = 'website',
 		siteName = 'Syndicate Motorsport',
@@ -82,14 +82,16 @@ export function getHomeOGData(stats: any, baseUrl: string = 'https://syndicate-m
 	}, baseUrl);
 }
 
-export function getDriversOGData(baseUrl: string = 'https://syndicate-motorsport.com') {
-	return generateOpenGraphTags({
+export function getDriversOGData(baseUrl: string = 'http://localhost:5173') {
+	const data = {
 		title: 'Driver Rankings | Syndicate Motorsport',
 		description: 'View driver rankings, statistics, and profiles of Syndicate Motorsport racing community members.',
 		image: `${baseUrl}/images/drivers.jpg`,
 		url: '/drivers',
 		type: 'website'
-	}, baseUrl);
+	};
+	const result = generateOpenGraphTags(data, baseUrl);
+	return result;
 }
 
 export function getLapRecordsOGData(baseUrl: string = 'https://syndicate-motorsport.com') {
