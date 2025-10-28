@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Card, Badge, Button, Input } from 'flowbite-svelte';
 	import { getEventsLeaguesOGData } from '$lib/og';
-	import { BookOpenSolid } from 'flowbite-svelte-icons';
+	import { BookOpenSolid, SearchOutline } from 'flowbite-svelte-icons';
 
 	// Props from server
 	let { data } = $props<{
@@ -146,20 +146,13 @@
 			<!-- Search Bar -->
 			<div class="relative max-w-md">
 				<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-					<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-						></path>
-					</svg>
+					<SearchOutline class="text-gray-500"/>
 				</div>
 				<input
 					bind:value={searchQuery}
 					type="text"
 					placeholder="Search championships..."
-					class="block w-95 rounded-lg border border-gray-300 bg-gray-50 py-2.5 pr-3 pl-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+					class="block w-100 rounded-lg border border-gray-300 bg-gray-50 py-2pr-3 pl-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
 				/>
 			</div>
 		</div>
