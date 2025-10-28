@@ -35,7 +35,7 @@
 		// Find the driver data by matching the driver name
 		const driver = drivers.find(d => d.driver === data);
 		if (!driver) return data;
-		return `<a href="/driver/${driver.driver_guid}">${driver.driver}</a>`;
+		return `<a data-umami-event="navigate-to-driver-details" data-umami-event-driver-guid="{driver.driver_guid}" href="/driver/${driver.driver_guid}">${driver.driver}</a>`;
 	};
 
 	// --------------------------
