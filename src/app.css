@@ -79,12 +79,12 @@
 .datatable-pagination .datatable-active button,
 .datatable-pagination .datatable-active button:focus,
 .datatable-pagination .datatable-active button:hover {
-  background-color: #ffe4de;
-  cursor: default;
+	background-color: #ffe4de;
+	cursor: default;
 }
 
 .datatable-wrapper .datatable-table tbody tr.selected {
-  background-color: #fff1ee !important;
+	background-color: #fff1ee !important;
 }
 
 .buy-now {

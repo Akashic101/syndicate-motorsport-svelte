@@ -5,6 +5,7 @@ This tool allows you to add new championships to the database through an interac
 ## Usage
 
 1. **Install dependencies** (if not already done):
+
    ```bash
    npm install
    ```
@@ -12,16 +13,19 @@ This tool allows you to add new championships to the database through an interac
 2. **Run the championship manager**:
 
    **For Node.js/npm:**
+
    ```bash
    npm run add-championship
    ```
-   
+
    **For Bun (recommended):**
+
    ```bash
    bun add_championship_bun.js
    ```
-   
+
    **For TypeScript with tsx:**
+
    ```bash
    npx tsx add_championship.ts
    ```
@@ -44,6 +48,7 @@ This tool allows you to add new championships to the database through an interac
 ## Image Requirements
 
 When adding an image path for a championship:
+
 - Use a path relative to the `static` directory (e.g., `/images/championships/logo.png`)
 - **Recommended dimensions**: 400x300 pixels (4:3 aspect ratio)
 - **Alternative sizes**: 800x600px (high-res) or 600x450px (balanced)
@@ -56,11 +61,13 @@ When adding an image path for a championship:
 ## Championship Information Fields
 
 ### Required Fields
+
 - **Championship ID**: Unique identifier from the API endpoint
 - **Championship Name**: Display name for the championship
 - **Description**: Brief description of the championship
 
 ### Optional Fields
+
 - **Season**: Season identifier (e.g., "Season 1", "2024")
 - **Discord Invite URL**: Link to championship Discord server
 - **Website URL**: Official championship website
@@ -72,6 +79,7 @@ When adding an image path for a championship:
 - **Sign-up Link**: URL for championship registration (displayed for running leagues)
 
 ### Status Colors
+
 - **Planned**: Yellow badge - Championship is scheduled but not yet started
 - **Running**: Green badge - Championship is currently active
 - **Finished**: Gray badge - Championship has concluded
@@ -108,6 +116,7 @@ http://138.201.226.34:8092/championship/YOUR_CHAMPIONSHIP_ID/standings.json
 ```
 
 For example, if the URL is:
+
 ```
 http://138.201.226.34:8092/championship/f1-2024-abc123/standings.json
 ```

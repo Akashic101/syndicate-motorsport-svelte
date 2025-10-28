@@ -8,7 +8,7 @@ export const db = new sqlite3.Database('./data.db');
  * @param {string} ident
  */
 export function quoteIdentifier(ident) {
-  return `"${ident.replace(/"/g, '""')}"`;
+	return `"${ident.replace(/"/g, '""')}"`;
 }
 
 /**
@@ -17,18 +17,20 @@ export function quoteIdentifier(ident) {
  * @param {{name: string, type: string}[]} columns
  */
 export function ensureTable(tableName, columns) {
-  if (!tableName || typeof tableName !== 'string') {
-    throw new Error('Table name must be a string');
-  }
+	if (!tableName || typeof tableName !== 'string') {
+		throw new Error('Table name must be a string');
+	}
 
-  const colsSql = columns.map(c => {
-    if (!c.name || typeof c.name !== 'string') {
-      throw new Error(`Invalid column name: ${JSON.stringify(c)}`);
-    }
-    return `${quoteIdentifier(c.name)} ${c.type}`;
-  }).join(', ');
+	const colsSql = columns
+		.map((c) => {
+			if (!c.name || typeof c.name !== 'string') {
+				throw new Error(`Invalid column name: ${JSON.stringify(c)}`);
+			}
+			return `${quoteIdentifier(c.name)} ${c.type}`;
+		})
+		.join(', ');
 
-  const sql = `CREATE TABLE IF NOT EXISTS ${quoteIdentifier(tableName)} (${colsSql})`;
-  console.log('Executing SQL:', sql); // debug
-  db.run(sql);
+	const sql = `CREATE TABLE IF NOT EXISTS ${quoteIdentifier(tableName)} (${colsSql})`;
+	console.log('Executing SQL:', sql); // debug
+	db.run(sql);
 }

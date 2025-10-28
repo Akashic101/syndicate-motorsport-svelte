@@ -84,7 +84,7 @@
 	<meta property="og:type" content={ogData['og:type']} />
 	<meta property="og:site_name" content={ogData['og:site_name']} />
 	<meta property="og:locale" content={ogData['og:locale']} />
-	
+
 	<meta name="twitter:card" content={ogData['twitter:card']} />
 	<meta name="twitter:title" content={ogData['twitter:title']} />
 	<meta name="twitter:description" content={ogData['twitter:description']} />
@@ -199,11 +199,11 @@
 										</p>
 									{/if}
 								</div>
-								<div class="flex flex-col items-center gap-2 lg:flex-row sm:gap-0">
+								<div class="flex flex-col items-center gap-2 sm:gap-0 lg:flex-row">
 									<Button
 										size="sm"
 										href={`/events-and-leagues/${championship.championship_id}`}
-										class="text-black m-2"
+										class="m-2 text-black"
 									>
 										View Info
 									</Button>
@@ -213,13 +213,13 @@
 											href={championship.sign_up_link}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="text-black m-2"
+											class="m-2 text-black"
 										>
 											Sign Up
 										</Button>
 									{:else}
 										<Button
-											class="text-black m-2"
+											class="m-2 text-black"
 											size="sm"
 											href="/events-and-leagues/{championship.championship_id}"
 										>
@@ -241,7 +241,9 @@
 </section>
 
 <section>
-	<div class="relative bg-[url('/images/events_and_leagues.jpg')] bg-cover bg-center bg-no-repeat px-4 py-16">
+	<div
+		class="relative bg-[url('/images/events_and_leagues.jpg')] bg-cover bg-center bg-no-repeat px-4 py-16"
+	>
 		<div class="absolute inset-0 bg-black/60"></div>
 		<div class="relative mx-auto max-w-2xl rounded-2xl p-8 text-center">
 			<div

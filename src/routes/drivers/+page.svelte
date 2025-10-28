@@ -22,18 +22,20 @@
 	const ogData = getDriversOGData();
 
 	// Transform drivers data to match table format
-	let tableData = $derived(drivers.map(driver => ({
-		RANK: driver.rank || 0,
-		DRIVER: driver.driver || '',
-		ELO: driver.elo || 0,
-		LICENSE: driver.license || '',
-		'SAFETY RATING': driver.safety_rating || '',
-		DriverGUID: driver.driver_guid || 0
-	})));
+	let tableData = $derived(
+		drivers.map((driver) => ({
+			RANK: driver.rank || 0,
+			DRIVER: driver.driver || '',
+			ELO: driver.elo || 0,
+			LICENSE: driver.license || '',
+			'SAFETY RATING': driver.safety_rating || '',
+			DriverGUID: driver.driver_guid || 0
+		}))
+	);
 
 	const renderDriverName = (data: any) => {
 		// Find the driver data by matching the driver name
-		const driver = drivers.find(d => d.driver === data);
+		const driver = drivers.find((d) => d.driver === data);
 		if (!driver) return data;
 		return `<a data-umami-event="navigate-to-driver-details" data-umami-event-driver-guid="${driver.driver_guid}" href="/driver/${driver.driver_guid}">${driver.driver}</a>`;
 	};
@@ -145,7 +147,8 @@
 				cellAttributes: (row: any) => ({
 					'data-order': getSafetySortValue(row['SAFETY RATING'] || '').toString()
 				})
-			},{ select: 5, hidden: true },
+			},
+			{ select: 5, hidden: true }
 		]
 	};
 
@@ -185,7 +188,7 @@
 	<meta property="og:type" content={ogData['og:type']} />
 	<meta property="og:site_name" content={ogData['og:site_name']} />
 	<meta property="og:locale" content={ogData['og:locale']} />
-	
+
 	<meta name="twitter:card" content={ogData['twitter:card']} />
 	<meta name="twitter:title" content={ogData['twitter:title']} />
 	<meta name="twitter:description" content={ogData['twitter:description']} />

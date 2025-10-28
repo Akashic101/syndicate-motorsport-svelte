@@ -23,7 +23,7 @@ export async function getRaceStats() {
 		}
 
 		const uniquePlatforms = new Set();
-		platforms?.forEach(record => {
+		platforms?.forEach((record) => {
 			if (record.platform) {
 				uniquePlatforms.add(record.platform);
 			}
@@ -33,7 +33,10 @@ export async function getRaceStats() {
 
 		// Calculate years of experience since October 15, 2020
 		const startDate = new Date('2020-10-15');
-		const yearsOfExperience = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
+		const yearsOfExperience = Math.max(
+			1,
+			Math.floor((Date.now() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+		);
 
 		// If no platforms found, default to 3
 		const totalSimGames = uniquePlatforms.size > 0 ? uniquePlatforms.size : 3;

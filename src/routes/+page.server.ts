@@ -18,29 +18,31 @@ type Stats = {
 };
 
 export const load: PageServerLoad = async () => {
-	
 	try {
 		const dbEvents = await getEvents();
-		
-		const events: EventItem[] = dbEvents.map(dbEvent => ({
-			title: dbEvent.event || '',
-			href: '',
-			time: dbEvent.time
-		})).filter(event => event.title);
+
+		const events: EventItem[] = dbEvents
+			.map((dbEvent) => ({
+				title: dbEvent.event || '',
+				href: '',
+				time: dbEvent.time
+			}))
+			.filter((event) => event.title);
 
 		// Get championships/leagues
 		const championships = await getAllChampionships();
-		
+
 		// Filter for running and planned championships (status is 'active', 'planned', or null/undefined)
-		const activeChampionships = championships.filter(champ => 
-			!champ.status || 
-			champ.status.toLowerCase() === 'running' || 
-			champ.status.toLowerCase() === 'planned'
+		const activeChampionships = championships.filter(
+			(champ) =>
+				!champ.status ||
+				champ.status.toLowerCase() === 'running' ||
+				champ.status.toLowerCase() === 'planned'
 		);
 
 		// Get dynamic stats
 		const raceStats = await getRaceStats();
-		
+
 		// Get Discord member count
 		let discordMembers = 850; // Fallback
 		try {
@@ -50,11 +52,12 @@ export const load: PageServerLoad = async () => {
 				{
 					method: 'GET',
 					headers: {
-						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+						'User-Agent':
+							'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 					}
 				}
 			);
-			
+
 			if (response.ok) {
 				const data = await response.json();
 				discordMembers = data.approximate_member_count || 850;
@@ -73,7 +76,7 @@ export const load: PageServerLoad = async () => {
 		return { events, championships: activeChampionships, stats };
 	} catch (error) {
 		console.error('Error loading events:', error);
-		return { 
+		return {
 			events: [],
 			championships: [],
 			stats: {
