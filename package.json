@@ -3,6 +3,18 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"devEngines": {
+		"runtime": {
+			"name": "bun",
+			"version": "^1.2.0",
+			"onFail": "download"
+		},
+		"packageManager": {
+			"name": "bun",
+			"version": "^1.2.0",
+			"onFail": "download"
+		}
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
