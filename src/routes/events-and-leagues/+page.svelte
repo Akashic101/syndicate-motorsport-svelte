@@ -129,6 +129,7 @@
         <!-- Rules Link Button -->
         <div class="mb-6">
             <Button 
+                data-umami-event="navigate-to-rules"
                 href="https://docs.google.com/document/d/1INAGo4rZKlLax-fJ1BGadewKlU48TvNMUSk5d5u6OZo/edit?tab=t.0#heading=h.xidipkakl490"
                 color="blue"
                 target="_blank"
@@ -261,6 +262,8 @@
                         {#if championship.status === 'running' && championship.sign_up_link}
                             <div class="mb-4">
                                 <a 
+                                    data-umami-event="navigate-to-league-sign-up"
+                                    data-umami-event-league-id="{championship.championship_id}"
                                     href={championship.sign_up_link} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
@@ -272,6 +275,8 @@
                         {/if}
                         
                         <Button 
+                            data-umami-event="navigate-to-league-details"
+                            data-umami-event-league-id="{championship.championship_id}"
                             color="blue" 
                             class="w-full"
                             onclick={() => navigateToLeague(championship.championship_id)}

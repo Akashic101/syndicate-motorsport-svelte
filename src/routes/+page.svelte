@@ -179,7 +179,7 @@
 								class="flex items-center space-x-4 border-b border-gray-200 py-2 last:border-b-0"
 							>
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm text-xl text-gray-900 dark:text-white">
+									<p class="truncate text-xl text-gray-900 dark:text-white">
 										{championship.name || 'Unnamed Championship'}
 									</p>
 									{#if championship.description}

@@ -18,7 +18,7 @@
 </svelte:head>
 
 <Navbar>
-	<NavBrand href="/">
+	<NavBrand data-umami-event="navigate-to-home" href="/">
 		<img
 			src="/images/Syndicate_Logo.svg"
 			class="me-3 h-6 sm:h-9"
@@ -34,12 +34,12 @@
 	</div>
 
 	<NavUl {activeUrl}>
-		<NavLi class="text-lg" href="/">Home</NavLi>
-		<NavLi class="text-lg" href="/events-and-leagues">Events and Leagues</NavLi>
-		<NavLi class="text-lg" href="/drivers">Drivers</NavLi>
-		<NavLi class="text-lg" href="/lap-records">Lap Records</NavLi>
-		<NavLi class="text-lg" href="/media">Media</NavLi>
-		<NavLi class="text-lg" href="/support-us">Support Us</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-home" href="/">Home</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-events-and-leagues" href="/events-and-leagues">Events and Leagues</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-drivers" href="/drivers">Drivers</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-lap-records" href="/lap-records">Lap Records</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-media" href="/media">Media</NavLi>
+		<NavLi class="text-lg" data-umami-event="navigate-to-support-us" href="/support-us">Support Us</NavLi>
 	</NavUl>
 </Navbar>
 

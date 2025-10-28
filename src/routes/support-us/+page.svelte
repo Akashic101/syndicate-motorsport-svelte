@@ -133,13 +133,13 @@
 				</p>
 
 				<div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-					<Button class="text-md text-black" href={socialLinks.patreon}>Support on Patreon</Button>
-					<Button class="text-md text-black" href={socialLinks.discord}>Join Discord</Button>
-					<Button class="text-md text-black" href={socialLinks.youtube}>YouTube Channel</Button>
-					<Button class="text-md text-black" href={socialLinks.instagram}
+					<Button class="text-md text-black" data-umami-event="navigate-to-patreon" href={socialLinks.patreon}>Support on Patreon</Button>
+					<Button class="text-md text-black" data-umami-event="navigate-to-discord" href={socialLinks.discord}>Join Discord</Button>
+					<Button class="text-md text-black" data-umami-event="navigate-to-youtube" href={socialLinks.youtube}>YouTube Channel</Button>
+					<Button class="text-md text-black" data-umami-event="navigate-to-instagram" href={socialLinks.instagram}
 						>Follow on Instagram</Button
 					>
-					<Button class="text-md text-black" href={socialLinks.bluesky}>Follow on BlueSky</Button>
+					<Button class="text-md text-black" data-umami-event="navigate-to-bluesky" href={socialLinks.bluesky}>Follow on BlueSky</Button>
 				</div>
 			</div>
 
@@ -169,7 +169,9 @@
 									<span class="dark:text-white">{benefit}</span>
 								</li>
 							{/each}
-							<a
+							<a	
+								data-umami-event="navigate-to-patreon-join-tier"
+								data-umami-event-tier-name="{tier.name}"
 								href={tier.link}
 								target="_blank"
 								class="block rounded-lg bg-primary-600 px-4 py-2 text-center transition-all hover:bg-primary-800"
@@ -194,11 +196,15 @@
 						<p class="mb-4 dark:text-white">{server.description}</p>
 						<div class="space-y-3">
 							<a
+								data-umami-event="navigate-to-live-timing"
+								data-umami-event-server-name="{server.name}"
 								href={server.liveTiming}
 								target="_blank"
 								class="block text-sky-400 hover:text-sky-300">Live Timing</a
 							>
 							<a
+								data-umami-event="navigate-to-join-server"
+								data-umami-event-server-name="{server.name}"
 								href={server.joinLink}
 								target="_blank"
 								class="block text-sky-400 hover:text-sky-300">Join Server (Requires CM)</a
