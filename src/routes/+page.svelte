@@ -241,8 +241,9 @@
 </section>
 
 <section>
-	<div class="bg-[#6f7480] px-4 py-16 dark:bg-[#1c1b22]">
-		<div class="mx-auto max-w-2xl rounded-2xl p-8 text-center">
+	<div class="relative bg-[url('/images/events_and_leagues.jpg')] bg-cover bg-center bg-no-repeat px-4 py-16">
+		<div class="absolute inset-0 bg-black/60"></div>
+		<div class="relative mx-auto max-w-2xl rounded-2xl p-8 text-center">
 			<div
 				class="flex items-center justify-center gap-2 text-sm tracking-widest text-slate-300 uppercase"
 			>
