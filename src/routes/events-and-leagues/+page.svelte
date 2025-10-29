@@ -146,13 +146,13 @@
 			<!-- Search Bar -->
 			<div class="relative max-w-md">
 				<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-					<SearchOutline class="text-gray-500"/>
+					<SearchOutline class="text-gray-500" />
 				</div>
 				<input
 					bind:value={searchQuery}
 					type="text"
 					placeholder="Search championships..."
-					class="block w-100 rounded-lg border border-gray-300 bg-gray-50 py-2pr-3 pl-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+					class="py-2pr-3 block w-100 rounded-lg border border-gray-300 bg-gray-50 pl-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
 				/>
 			</div>
 		</div>
@@ -282,15 +282,20 @@
 												</div>
 											{/if}
 
-											<Button
-												data-umami-event="navigate-to-league-details"
-												data-umami-event-league-id={championship.championship_id}
-												color="blue"
-												class="w-full"
-												onclick={() => navigateToLeague(championship.championship_id)}
-											>
-												View League Details
-											</Button>
+											{#if championship.status === 'planned'}
+												<Button color="emerald" href={championship.more_info}>More info</Button>
+											{/if}
+											{#if championship.status !== 'planned'}
+												<Button
+													data-umami-event="navigate-to-league-details"
+													data-umami-event-league-id={championship.championship_id}
+													color="blue"
+													class="w-full"
+													onclick={() => navigateToLeague(championship.championship_id)}
+												>
+													View League Details
+												</Button>
+											{/if}
 										</div>
 									</Card>
 								{/each}
