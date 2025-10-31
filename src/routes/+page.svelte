@@ -16,7 +16,7 @@
 	import { getHomeOGData } from '$lib/og';
 	let { data } = $props<{
 		data: {
-			events: { title: string; href: string; time: number }[];
+			events: { title: string; href: string; time: string }[];
 			championships: Championship[];
 			stats: {
 				discordMembers: number;
@@ -31,22 +31,23 @@
 	// Generate Open Graph data for home page
 	const ogData = getHomeOGData(data.stats);
 
-	// Function to format time consistently in BST
-	function formatEventTime(timestamp: number): string {
+	// Function to format time in user's local timezone and locale
+	function formatEventTime(timestamptz: string): string {
 		try {
-			// Convert to integer if it's a floating point number
-			const intTimestamp = Math.floor(timestamp);
-			const date = new Date(intTimestamp);
+			// Parse timestamptz string (e.g., "2024-01-15T10:30:00Z" or "2024-01-15T10:30:00+00:00")
+			const date = new Date(timestamptz);
 
 			// Check if the date is valid
 			if (isNaN(date.getTime())) {
-				console.warn('Invalid timestamp:', timestamp, 'converted to:', intTimestamp);
+				console.warn('Invalid timestamptz:', timestamptz);
 				return 'Invalid date';
 			}
 
-			// Always format in BST (Europe/London timezone)
-			const bstTime = date.toLocaleString('en-US', {
-				timeZone: 'Europe/London',
+			// Get user's locale from browser (only available in browser, not during SSR)
+			const locale = typeof navigator !== 'undefined' ? navigator.language : undefined;
+
+			// Format in user's local timezone and locale (no timeZone specified uses browser's local timezone)
+			const localTime = date.toLocaleString(locale, {
 				weekday: 'long',
 				year: 'numeric',
 				month: 'long',
@@ -56,17 +57,16 @@
 				hour12: true
 			});
 
-			// Get BST/GMT abbreviation
+			// Get local timezone abbreviation
 			const timeZoneName =
 				date
-					.toLocaleString('en-US', {
-						timeZone: 'Europe/London',
+					.toLocaleString(locale, {
 						timeZoneName: 'short'
 					})
 					.split(' ')
-					.pop() || 'BST';
+					.pop() || '';
 
-			return `${bstTime} ${timeZoneName}`;
+			return `${localTime} ${timeZoneName}`;
 		} catch (error) {
 			console.error('Error formatting event time:', error);
 			return 'Invalid date';

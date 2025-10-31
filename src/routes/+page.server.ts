@@ -7,7 +7,7 @@ import type { Championship } from '$lib/types';
 type EventItem = {
 	title: string;
 	href: string;
-	time: number; // timestamp in milliseconds
+	time: string; // timestamptz string
 };
 
 type Stats = {
@@ -25,7 +25,7 @@ export const load: PageServerLoad = async () => {
 			.map((dbEvent) => ({
 				title: dbEvent.event || '',
 				href: '',
-				time: dbEvent.time
+				time: dbEvent.time // timestamptz string
 			}))
 			.filter((event) => event.title);
 

@@ -8,17 +8,16 @@ export interface Event {
 	time: string | null;
 }
 
-// Legacy type for backward compatibility with existing components
 export interface EventRow {
 	event: string;
-	time: number; // timestamp in milliseconds
+	time: string; // timestamptz string
 }
 
-// Convert Supabase Event to legacy EventRow format
+// Convert Supabase Event to EventRow format
 function convertToLegacyFormat(event: Event): EventRow {
 	return {
 		event: event.name || '',
-		time: event.time ? parseInt(event.time, 10) : 0
+		time: event.time || ''
 	};
 }
 
@@ -49,11 +48,15 @@ export async function getEventsByTimeRange(
 	endTime: number
 ): Promise<EventRow[]> {
 	try {
+		// Convert numeric timestamps (milliseconds) to ISO 8601 timestamptz strings
+		const startTimeIso = new Date(startTime).toISOString();
+		const endTimeIso = new Date(endTime).toISOString();
+
 		const { data, error } = await supabase
 			.from('events')
 			.select('*')
-			.gte('time', startTime.toString())
-			.lte('time', endTime.toString())
+			.gte('time', startTimeIso)
+			.lte('time', endTimeIso)
 			.order('time', { ascending: true });
 
 		if (error) {
@@ -71,12 +74,13 @@ export async function getEventsByTimeRange(
 // Get upcoming events (events with time greater than current time)
 export async function getUpcomingEvents(): Promise<EventRow[]> {
 	try {
-		const currentTime = Date.now().toString();
+		// Convert current time (milliseconds) to ISO 8601 timestamptz string
+		const currentTimeIso = new Date().toISOString();
 
 		const { data, error } = await supabase
 			.from('events')
 			.select('*')
-			.gte('time', currentTime)
+			.gte('time', currentTimeIso)
 			.order('time', { ascending: true });
 
 		if (error) {
