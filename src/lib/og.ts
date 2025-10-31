@@ -1,3 +1,5 @@
+import { getSupabaseImageUrl } from './imageUtils';
+
 export interface OpenGraphData {
 	title?: string;
 	description?: string;
@@ -70,7 +72,7 @@ export function getChampionshipOGData(
 ) {
 	// Use championship-specific image if available, otherwise fallback to events_and_leagues.jpg
 	const imageUrl = championship.image_path
-		? `${baseUrl}${championship.image_path}`
+		? getSupabaseImageUrl(championship.image_path) || `${baseUrl}/images/events_and_leagues.jpg`
 		: `${baseUrl}/images/events_and_leagues.jpg`;
 
 	return generateOpenGraphTags(

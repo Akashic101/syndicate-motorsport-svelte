@@ -2,6 +2,7 @@
 	import { Card, Badge, Button, Input } from 'flowbite-svelte';
 	import { getEventsLeaguesOGData } from '$lib/og';
 	import { BookOpenSolid, SearchOutline } from 'flowbite-svelte-icons';
+	import { getSupabaseImageUrl } from '$lib/imageUtils';
 
 	// Props from server
 	let { data } = $props<{
@@ -215,11 +216,15 @@
 							</h2>
 							<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 								{#each statusChampionships as championship}
+									{@const imageUrl = championship.image_path
+										? getSupabaseImageUrl(championship.image_path) ||
+											'/images/events_and_leagues.jpg'
+										: '/images/events_and_leagues.jpg'}
 									<Card class="transition-shadow duration-200 hover:shadow-lg">
 										{#if championship.image_path}
 											<div class="h-48 overflow-hidden rounded-t-lg">
 												<img
-													src={championship.image_path}
+													src={imageUrl}
 													alt={championship.name}
 													class="h-full w-full object-cover"
 													onerror={handleImageError}

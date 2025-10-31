@@ -93,10 +93,18 @@
 		},
 		{
 			name: 'Assetto Corsa #3',
-			description: 'Fun race server, usually used for non ELO enabled events.',
+			description:
+				'Fun race server, usually used for non ELO enabled events and testing for new circuits and cars',
 			contact: 'PirateLaserBeam',
 			liveTiming: 'http://138.201.226.34:8392/live-timing',
 			joinLink: 'https://acstuff.ru/s/q:race/online/join?httpPort=8381&ip=138.201.226.34'
+		},
+		{
+			name: 'Assetto Corsa League Server #1',
+			description: 'Our newest server for Friday events and leagues',
+			contact: 'Wibble',
+			liveTiming: 'http://138.201.226.34:8692/live-timing?server=0',
+			joinLink: 'https://acstuff.ru/s/q:race/online/join?httpPort=8681&ip=138.201.226.34'
 		}
 	];
 </script>

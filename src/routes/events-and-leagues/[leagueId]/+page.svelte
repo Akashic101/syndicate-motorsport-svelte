@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Table } from '@flowbite-svelte-plugins/datatable';
 	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
-	import { Card, Badge, Button, Breadcrumb, BreadcrumbItem } from 'flowbite-svelte';
+	import { Card, Badge, Breadcrumb, BreadcrumbItem } from 'flowbite-svelte';
 	import { getChampionshipOGData } from '$lib/og';
+	import { getSupabaseImageUrl } from '$lib/imageUtils';
 	// Note: Using emoji flags instead of svelte-flags for better compatibility
 
 	// Props from server
@@ -302,9 +303,11 @@
 			<Card class="min-w-xl">
 				<div class="text-center">
 					{#if data.championship.image_path}
+						{@const imageUrl =
+							getSupabaseImageUrl(data.championship.image_path) || '/images/events_and_leagues.jpg'}
 						<div class="flex h-full items-center justify-center">
 							<img
-								src={data.championship.image_path}
+								src={imageUrl}
 								alt={data.championship.name || 'Championship Image'}
 								class="max-h-full max-w-full rounded-lg object-contain shadow-lg"
 							/>
