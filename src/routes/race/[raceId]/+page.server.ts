@@ -8,6 +8,8 @@ import {
 	type RaceLap
 } from '$lib/races';
 import { getDriversByGUIDs } from '$lib/drivers';
+import { getChampionshipByChampionshipId } from '$lib/championships';
+import type { Championship } from '$lib/types';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -41,14 +43,18 @@ export const load: PageServerLoad = async ({ params }) => {
 			])
 		];
 
-		// Fetch driver information
-		const driversMap = await getDriversByGUIDs(driverGUIDs);
+		// Fetch driver information and championship in parallel
+		const [driversMap, championship] = await Promise.all([
+			getDriversByGUIDs(driverGUIDs),
+			race.championship_id ? getChampionshipByChampionshipId(race.championship_id) : Promise.resolve(null)
+		]);
 
 		return {
 			race,
 			cars,
 			laps,
-			driversMap: Object.fromEntries(driversMap)
+			driversMap: Object.fromEntries(driversMap),
+			championship
 		};
 	} catch (err) {
 		if (err instanceof Error && 'status' in err) {

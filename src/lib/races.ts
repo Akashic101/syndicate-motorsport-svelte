@@ -87,3 +87,25 @@ export async function getRaceLapsBySessionId(sessionId: number): Promise<RaceLap
 	}
 }
 
+// Get race sessions by championship_id
+export async function getRaceSessionsByChampionshipId(
+	championshipId: string
+): Promise<RaceSession[]> {
+	try {
+		const { data, error } = await supabase
+			.from('race_sessions')
+			.select('*')
+			.eq('championship_id', championshipId)
+			.order('race_date', { ascending: false, nullsFirst: false });
+
+		if (error) {
+			throw error;
+		}
+
+		return data || [];
+	} catch (error) {
+		console.error('Error fetching race sessions by championship ID:', error);
+		throw error;
+	}
+}
+

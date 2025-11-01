@@ -34,6 +34,10 @@ export interface RaceSession {
 	race_date: string | null; // timestamp with time zone
 	championship_id: string | null; // uuid
 	created_at: string | null; // timestamp with time zone
+	track_config: string | null;
+	track_name: string | null;
+	type: string | null;
+	event_name: string | null;
 }
 
 export interface RaceCar {

@@ -1,14 +1,10 @@
 <script lang="ts">
 	import type { RaceSession, RaceCar, RaceLap } from '$lib/races';
 	import type { Driver } from '$lib/drivers';
-	import {
-		Table as DefaultTable,
-		TableBody,
-		TableBodyCell,
-		TableBodyRow,
-		TableHead,
-		TableHeadCell
-	} from 'flowbite-svelte';
+	import type { Championship } from '$lib/types';
+	import { Table } from '@flowbite-svelte-plugins/datatable';
+	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
+	import { onMount } from 'svelte';
 
 	let { data } = $props<{
 		data: {
@@ -16,19 +12,21 @@
 			cars: RaceCar[];
 			laps: RaceLap[];
 			driversMap: Record<string, Driver>;
+			championship: Championship | null;
 		};
 	}>();
 	let race = $derived(data.race);
 	let cars = $derived(data.cars);
 	let laps = $derived(data.laps);
 	let driversMap = $derived(data.driversMap);
+	let championship = $derived(data.championship);
 
-	// Format date for display
+	// Format date for display (user's local style)
 	function formatDate(dateString: string | null): string {
 		if (!dateString) return 'N/A';
 		try {
 			const date = new Date(dateString);
-			return date.toLocaleDateString('en-US', {
+			return date.toLocaleString(undefined, {
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric',
@@ -73,8 +71,24 @@
 		driverName: string;
 		car: RaceCar | null;
 		laps: RaceLap[];
+		tableData: Array<Record<string, any>>;
 	}
 
+	// Get unique ID for driver lap section
+	function getDriverLapSectionId(driverGUID: string | null, carId: number | null): string {
+		if (!driverGUID || driverGUID === 'unknown') return 'unknown';
+		const safeGUID = driverGUID.replace(/[^a-zA-Z0-9]/g, '_');
+		const carPart = carId !== null ? `_${carId}` : '';
+		return `driver-laps-${safeGUID}${carPart}`;
+	}
+
+	// Render fastest lap indicator
+	const renderFastest = (data: any) => {
+		if (data === '—' || !data) return '—';
+		return '<span class="text-green-600 dark:text-green-400">✓</span>';
+	};
+
+	// Transform laps to table data (store raw values, not HTML)
 	let lapsByDriver = $derived.by(() => {
 		const groups = new Map<string, DriverLapGroup>();
 
@@ -83,28 +97,197 @@
 			const driverGUID = lap.driver_guid || 'unknown';
 			const key = `${driverGUID}_${lap.car_id}`;
 
-		if (!groups.has(key)) {
-			const car = cars.find((c: RaceCar) => c.id === lap.car_id) || null;
+			if (!groups.has(key)) {
+				const car = cars.find((c: RaceCar) => c.id === lap.car_id) || null;
 				groups.set(key, {
 					driverGUID,
 					driverName: getDriverName(driverGUID),
 					car,
-					laps: []
+					laps: [],
+					tableData: []
 				});
 			}
 
 			groups.get(key)!.laps.push(lap);
 		}
 
-		// Sort laps by timestamp for each driver
+		// Sort laps by timestamp for each driver and create table data
 		for (const group of groups.values()) {
 			group.laps.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+			
+			// Transform laps to table data (raw values, not HTML)
+			group.tableData = group.laps.map((lap, index) => ({
+				'Lap #': index + 1,
+				'Lap Time': formatLapTime(lap.lap_time),
+				'Sector 1': formatSectorTime(lap.sector1),
+				'Sector 2': formatSectorTime(lap.sector2),
+				'Sector 3': formatSectorTime(lap.sector3),
+				Tyre: lap.tyre ?? 'N/A',
+				Cuts: lap.cuts ?? 0,
+				Fastest: lap.contributed_to_fastest_lap ? '✓' : '—'
+			}));
 		}
 
-		// Convert to array and sort by driver name
-		return Array.from(groups.values()).sort((a, b) =>
-			a.driverName.localeCompare(b.driverName)
-		);
+		// Convert to array - will be sorted by finishing position later
+		return Array.from(groups.values());
+	});
+
+	// DataTable options for laps
+	const lapsTableOptions: DataTableOptions = {
+		paging: false,
+		searchable: false,
+		columns: [
+			{ select: 7, render: renderFastest, type: 'string' } // Fastest column with render function
+		]
+	};
+
+	// Calculate finishing positions based on:
+	// 1. Most laps completed
+	// 2. Among same lap count, earliest last lap timestamp
+	interface FinishingPosition {
+		position: number;
+		driverGUID: string;
+		driverName: string;
+		car: RaceCar | null;
+		totalLaps: number;
+		lastLapTimestamp: number | null;
+		totalRaceTime: number | null; // Sum of all lap times
+		fastestLap: number | null;
+	}
+
+	let finishingPositionsData = $derived.by(() => {
+		const positions: Omit<FinishingPosition, 'position'>[] = [];
+
+		// Calculate for each driver/car combination
+		for (const group of lapsByDriver) {
+			const sortedLaps = [...group.laps].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+			const lastLap = sortedLaps[sortedLaps.length - 1];
+			const validLapTimes = sortedLaps
+				.map((lap) => lap.lap_time)
+				.filter((time): time is number => time !== null && time !== undefined);
+			
+			const fastestLap = validLapTimes.length > 0 ? Math.min(...validLapTimes) : null;
+			const totalRaceTime = validLapTimes.length > 0 ? validLapTimes.reduce((sum, time) => sum + time, 0) : null;
+
+			positions.push({
+				driverGUID: group.driverGUID,
+				driverName: group.driverName,
+				car: group.car,
+				totalLaps: sortedLaps.length,
+				lastLapTimestamp: lastLap?.timestamp || null,
+				totalRaceTime,
+				fastestLap
+			});
+		}
+
+		// Sort by finishing position:
+		// 1. Most laps first (descending)
+		// 2. Among same lap count, earliest last lap timestamp (ascending)
+		positions.sort((a, b) => {
+			// First sort by total laps (more laps = better)
+			if (b.totalLaps !== a.totalLaps) {
+				return b.totalLaps - a.totalLaps;
+			}
+			// If same number of laps, sort by last lap timestamp (earlier = better)
+			const aTime = a.lastLapTimestamp || Infinity;
+			const bTime = b.lastLapTimestamp || Infinity;
+			return aTime - bTime;
+		});
+
+		// Assign positions and create FinishingPosition array
+		const finalPositions = positions.map((pos, index) => ({
+			...pos,
+			position: index + 1
+		}));
+
+		// Create a map for quick lookup by driver/car key
+		const positionMap = new Map<string, FinishingPosition>();
+		finalPositions.forEach((pos) => {
+			const key = `${pos.driverGUID}_${pos.car?.car_id ?? 'unknown'}`;
+			positionMap.set(key, pos);
+		});
+
+		// Sort lapsByDriver by finishing position
+		const sortedLapsByDriver = Array.from(lapsByDriver).sort((a, b) => {
+			const keyA = `${a.driverGUID}_${a.car?.car_id ?? 'unknown'}`;
+			const keyB = `${b.driverGUID}_${b.car?.car_id ?? 'unknown'}`;
+			const posA = positionMap.get(keyA)?.position ?? Infinity;
+			const posB = positionMap.get(keyB)?.position ?? Infinity;
+			return posA - posB;
+		});
+
+		return { positions: finalPositions, sortedLapsByDriver };
+	});
+
+	// Extract positions and sorted laps
+	let finishingPositions = $derived(finishingPositionsData.positions);
+	let lapsByDriverSorted = $derived(finishingPositionsData.sortedLapsByDriver);
+
+	// Transform finishing positions for DataTable (includes car info from Race Cars)
+	let resultsTableData = $derived(
+		finishingPositions.map((pos) => ({
+			Position: pos.position,
+			Driver: pos.driverName,
+			'Total Laps': pos.totalLaps,
+			'Fastest Lap': pos.fastestLap ? formatLapTime(pos.fastestLap) : 'N/A',
+			'Total Race Time': pos.totalRaceTime ? formatLapTime(pos.totalRaceTime) : 'N/A',
+			Model: pos.car?.model ?? 'N/A',
+			'Ballast (kg)': pos.car?.ballast_kg ?? 'N/A',
+			DriverGUID: pos.driverGUID,
+			CarID: pos.car?.car_id ?? -1, // Use -1 instead of null for table compatibility
+			Actions: `${pos.driverGUID || 'unknown'}_${pos.car?.car_id ?? -1}` // Store identifier for lookup
+		}))
+	);
+
+	// Render driver name as link in results (similar to drivers page)
+	const renderResultsDriverName = (data: any) => {
+		// Find the position that matches this driver name
+		const pos = finishingPositions.find((p) => p.driverName === data);
+		if (!pos || !pos.driverGUID || pos.driverGUID === 'unknown') return data || 'N/A';
+		return `<a data-umami-event="navigate-to-driver-details" data-umami-event-driver-guid="${pos.driverGUID}" href="/driver/${pos.driverGUID}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">${data}</a>`;
+	};
+
+	// Render button to jump to driver's lap table in results
+	const renderResultsViewLapsButton = (data: any) => {
+		// data contains the identifier we stored: driverGUID_carId
+		const parts = String(data).split('_');
+		if (parts.length < 2 || parts[0] === 'unknown' || parts[1] === '-1') return 'N/A';
+		const driverGUID = parts[0];
+		const carId = parseInt(parts[1]);
+		if (isNaN(carId)) return 'N/A';
+		const sectionId = getDriverLapSectionId(driverGUID, carId);
+		// Use anchor tag with href to hash - this works better than onclick in rendered HTML
+		return `<a href="#${sectionId}" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 inline-block text-center no-underline">View Laps</a>`;
+	};
+
+	// DataTable options for results
+	const resultsTableOptions: DataTableOptions = {
+		paging: false,
+		searchable: false,
+		columns: [
+			{ select: 1, render: renderResultsDriverName, type: 'string' }, // Driver name with link
+			{ select: 5, hidden: true }, // Hide Model
+			{ select: 6, hidden: true }, // Hide DriverGUID
+			{ select: 7, hidden: true }, // Hide CarID
+			{ select: 8, hidden: true }, // Hide CarID
+			{ select: 9, render: renderResultsViewLapsButton, type: 'string' } // Actions button - use string like drivers page
+		]
+	};
+
+	// Attach smooth scroll behavior to anchor links after table renders
+	onMount(() => {
+		setTimeout(() => {
+			document.querySelectorAll('a[href^="#driver-laps-"]').forEach((link) => {
+				link.addEventListener('click', (e) => {
+					e.preventDefault();
+					const targetId = link.getAttribute('href')?.substring(1);
+					if (targetId) {
+						const target = document.getElementById(targetId);
+						target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+				});
+			});
+		}, 100);
 	});
 </script>
 
@@ -123,39 +306,64 @@
 
 	<div class="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
 		<h1 class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
-			Race Session #{race.id}
+			{race.event_name || `Race Session #${race.id}`}
 		</h1>
 
 		<!-- Race Session Information -->
 		<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
 			<div class="space-y-4">
 				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Session File</p>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Race Date</p>
 					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{race.session_file || 'N/A'}
+						{formatDate(race.race_date)}
 					</p>
 				</div>
 
 				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Race Date</p>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Track Name</p>
 					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{formatDate(race.race_date)}
+						{race.track_name || 'N/A'}
+					</p>
+				</div>
+
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Track Config</p>
+					<p class="text-lg font-semibold text-gray-900 dark:text-white">
+						{race.track_config || 'N/A'}
 					</p>
 				</div>
 			</div>
 
 			<div class="space-y-4">
 				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Version</p>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Championship</p>
 					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{race.version || 'N/A'}
+						{#if championship && race.championship_id}
+							<a
+								href="/events-and-leagues/{race.championship_id}"
+								class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+							>
+								{championship.name || race.championship_id}
+							</a>
+						{:else if race.championship_id}
+							{race.championship_id}
+						{:else}
+							N/A
+						{/if}
 					</p>
 				</div>
 
 				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Championship ID</p>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Type</p>
 					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{race.championship_id || 'N/A'}
+						{race.type || 'N/A'}
+					</p>
+				</div>
+
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Session File</p>
+					<p class="text-lg font-semibold text-gray-900 dark:text-white">
+						{race.session_file || 'N/A'}
 					</p>
 				</div>
 			</div>
@@ -164,8 +372,8 @@
 		<!-- Race Statistics -->
 		<div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
 			<div class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
-				<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Cars</p>
-				<p class="text-2xl font-bold text-gray-900 dark:text-white">{cars.length}</p>
+				<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Drivers</p>
+				<p class="text-2xl font-bold text-gray-900 dark:text-white">{finishingPositions.length}</p>
 			</div>
 			<div class="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
 				<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Laps</p>
@@ -183,53 +391,18 @@
 			</div>
 		</div>
 
-		<!-- Race Cars Section -->
-		<div class="mb-8">
-			<h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Race Cars</h2>
-			{#if cars.length === 0}
-				<p class="py-4 text-center text-gray-400">No cars data available.</p>
-			{:else}
-				<div class="overflow-x-auto">
-					<DefaultTable>
-						<TableHead>
-							<TableHeadCell>Car ID</TableHeadCell>
-							<TableHeadCell>Driver GUID</TableHeadCell>
-							<TableHeadCell>Model</TableHeadCell>
-							<TableHeadCell>Skin</TableHeadCell>
-							<TableHeadCell>Ballast (kg)</TableHeadCell>
-							<TableHeadCell>Restrictor</TableHeadCell>
-							<TableHeadCell>Min Ping</TableHeadCell>
-							<TableHeadCell>Max Ping</TableHeadCell>
-						</TableHead>
-						<TableBody>
-							{#each cars as car}
-								<TableBodyRow>
-									<TableBodyCell>{car.car_id ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>
-										{#if car.driver_guid}
-											<a
-												href="/driver/{car.driver_guid}"
-												class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-											>
-												{car.driver_guid.substring(0, 8)}...
-											</a>
-										{:else}
-											N/A
-										{/if}
-									</TableBodyCell>
-									<TableBodyCell>{car.model ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>{car.skin ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>{car.ballast_kg ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>{car.restrictor ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>{car.min_ping ?? 'N/A'}</TableBodyCell>
-									<TableBodyCell>{car.max_ping ?? 'N/A'}</TableBodyCell>
-								</TableBodyRow>
-							{/each}
-						</TableBody>
-					</DefaultTable>
-				</div>
-			{/if}
-		</div>
+		<!-- Race Results Section (merged with Race Cars - only shows drivers who completed laps) -->
+		{#if laps.length > 0 && finishingPositions.length > 0}
+			<div class="mb-8">
+				<h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Race Results</h2>
+				<Table items={resultsTableData} dataTableOptions={resultsTableOptions} />
+			</div>
+		{:else if cars.length > 0}
+			<div class="mb-8">
+				<h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Race Results</h2>
+				<p class="py-4 text-center text-gray-400">No lap data available to determine results.</p>
+			</div>
+		{/if}
 
 		<!-- Race Laps Section - Grouped by Driver -->
 		<div class="mb-8">
@@ -237,8 +410,9 @@
 			{#if laps.length === 0}
 				<p class="py-4 text-center text-gray-400">No laps data available.</p>
 			{:else}
-				{#each lapsByDriver as group}
-					<div class="mb-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
+				{#each lapsByDriverSorted as group}
+					{@const sectionId = getDriverLapSectionId(group.driverGUID, group.car?.car_id ?? null)}
+					<div id={sectionId} class="mb-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700 scroll-mt-8">
 						<div class="mb-4 flex items-center justify-between">
 							<h3 class="text-xl font-semibold text-gray-900 dark:text-white">
 								{#if group.driverGUID && group.driverGUID !== 'unknown'}
@@ -264,40 +438,7 @@
 								<span>{group.laps.length} {group.laps.length === 1 ? 'lap' : 'laps'}</span>
 							</div>
 						</div>
-						<div class="overflow-x-auto">
-							<DefaultTable>
-								<TableHead>
-									<TableHeadCell>Lap #</TableHeadCell>
-									<TableHeadCell>Lap Time</TableHeadCell>
-									<TableHeadCell>Sector 1</TableHeadCell>
-									<TableHeadCell>Sector 2</TableHeadCell>
-									<TableHeadCell>Sector 3</TableHeadCell>
-									<TableHeadCell>Tyre</TableHeadCell>
-									<TableHeadCell>Cuts</TableHeadCell>
-									<TableHeadCell>Fastest</TableHeadCell>
-								</TableHead>
-								<TableBody>
-									{#each group.laps as lap, index}
-										<TableBodyRow>
-											<TableBodyCell>{index + 1}</TableBodyCell>
-											<TableBodyCell>{formatLapTime(lap.lap_time)}</TableBodyCell>
-											<TableBodyCell>{formatSectorTime(lap.sector1)}</TableBodyCell>
-											<TableBodyCell>{formatSectorTime(lap.sector2)}</TableBodyCell>
-											<TableBodyCell>{formatSectorTime(lap.sector3)}</TableBodyCell>
-											<TableBodyCell>{lap.tyre ?? 'N/A'}</TableBodyCell>
-											<TableBodyCell>{lap.cuts ?? 0}</TableBodyCell>
-											<TableBodyCell>
-												{#if lap.contributed_to_fastest_lap}
-													<span class="text-green-600 dark:text-green-400">✓</span>
-												{:else}
-													—
-												{/if}
-											</TableBodyCell>
-										</TableBodyRow>
-									{/each}
-								</TableBody>
-							</DefaultTable>
-						</div>
+						<Table items={group.tableData} dataTableOptions={lapsTableOptions} />
 					</div>
 				{/each}
 			{/if}

@@ -1,6 +1,13 @@
 import type { PageServerLoad } from './$types';
 import { getChampionshipByChampionshipId } from '$lib/championships';
 import { getServerById } from '$lib/servers';
+import {
+	getRaceSessionsByChampionshipId,
+	getRaceCarsBySessionId,
+	getRaceLapsBySessionId
+} from '$lib/races';
+import type { RaceSession, RaceCar, RaceLap } from '$lib/types';
+import { getDriversByGUIDs } from '$lib/drivers';
 
 export const load: PageServerLoad = async ({ params }) => {
 	try {
@@ -123,6 +130,106 @@ export const load: PageServerLoad = async ({ params }) => {
 		// Use championship data from database
 		const championship = championshipData;
 
+		// Fetch races for this championship
+		const races = await getRaceSessionsByChampionshipId(leagueId);
+
+		// Calculate podium (top 3) for each race
+		interface PodiumDriver {
+			position: number;
+			driverName: string;
+			driverGUID: string | null;
+		}
+
+		const racesWithPodiums = await Promise.all(
+			races.map(async (race) => {
+				try {
+					// Fetch cars and laps for this race
+					const [cars, laps] = await Promise.all([
+						getRaceCarsBySessionId(race.id),
+						getRaceLapsBySessionId(race.id)
+					]);
+
+					if (laps.length === 0) {
+						return { race, podium: [] as PodiumDriver[] };
+					}
+
+					// Get unique driver GUIDs
+					const driverGUIDs = [
+						...new Set([
+							...cars.map((car) => car.driver_guid).filter((guid): guid is string => guid !== null),
+							...laps.map((lap) => lap.driver_guid).filter((guid): guid is string => guid !== null)
+						])
+					];
+
+					// Fetch driver information
+					const driversMap = await getDriversByGUIDs(driverGUIDs);
+					const driversByName = Object.fromEntries(driversMap);
+
+					// Group laps by driver/car
+					const groups = new Map<string, { driverGUID: string; car: RaceCar | null; laps: RaceLap[] }>();
+
+					for (const lap of laps) {
+						const driverGUID = lap.driver_guid || 'unknown';
+						const key = `${driverGUID}_${lap.car_id}`;
+
+						if (!groups.has(key)) {
+							const car = cars.find((c: RaceCar) => c.id === lap.car_id) || null;
+							groups.set(key, {
+								driverGUID,
+								car,
+								laps: []
+							});
+						}
+
+						groups.get(key)!.laps.push(lap);
+					}
+
+					// Calculate positions
+					const positions = Array.from(groups.values())
+						.filter((group) => group.laps.length > 0) // Only include drivers with laps
+						.map((group) => {
+							const sortedLaps = [...group.laps].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+							const lastLap = sortedLaps[sortedLaps.length - 1];
+							const driver = driversByName[group.driverGUID];
+							const driverName = driver?.driver || (group.driverGUID !== 'unknown' ? `Driver ${group.driverGUID.substring(0, 8)}...` : 'Unknown Driver');
+
+							return {
+								driverGUID: group.driverGUID === 'unknown' ? null : group.driverGUID,
+								driverName,
+								car: group.car,
+								totalLaps: sortedLaps.length,
+								lastLapTimestamp: lastLap?.timestamp || null
+							};
+						});
+
+					// Sort by finishing position
+					positions.sort((a, b) => {
+						if (b.totalLaps !== a.totalLaps) {
+							return b.totalLaps - a.totalLaps;
+						}
+						const aTime = a.lastLapTimestamp || Infinity;
+						const bTime = b.lastLapTimestamp || Infinity;
+						return aTime - bTime;
+					});
+
+					// Get top 3 (podium)
+					const podium: PodiumDriver[] = positions.slice(0, 3).map((pos, index) => ({
+						position: index + 1,
+						driverName: pos.driverName,
+						driverGUID: pos.driverGUID
+					}));
+
+					return {
+						race,
+						podium
+					};
+				} catch (error) {
+					console.error(`Error calculating podium for race ${race.id}:`, error);
+					return { race, podium: [] as PodiumDriver[] };
+				}
+			})
+		);
+
 		// Calculate stats
 		const stats = {
 			driverCount: drivers.length,
@@ -133,7 +240,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			championship,
 			drivers,
 			teams,
-			races: [], // Empty array for compatibility
+			races: racesWithPodiums,
 			stats
 		};
 	} catch (error) {

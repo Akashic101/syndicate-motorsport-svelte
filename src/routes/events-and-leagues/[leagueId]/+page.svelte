@@ -1,17 +1,22 @@
 <script lang="ts">
-	import { Table } from '@flowbite-svelte-plugins/datatable';
-	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
 	import { Card, Badge, Breadcrumb, BreadcrumbItem } from 'flowbite-svelte';
 	import { getChampionshipOGData } from '$lib/og';
 	import { getSupabaseImageUrl } from '$lib/imageUtils';
+	import type { RaceSession } from '$lib/types';
 	// Note: Using emoji flags instead of svelte-flags for better compatibility
 
 	// Props from server
+	interface RaceWithPodium {
+		race: RaceSession;
+		podium: Array<{ position: number; driverName: string; driverGUID: string | null }>;
+	}
+
 	let { data } = $props<{
 		data: {
 			championship: any;
 			drivers: any[];
 			teams: any[];
+			races: RaceWithPodium[];
 			stats: any;
 		};
 	}>();
@@ -20,6 +25,34 @@
 	const ogData = getChampionshipOGData(data.championship);
 
 	let selectedTab = $state('drivers');
+
+	// Format date for race display (user's local style)
+	function formatRaceDate(dateString: string | null): string {
+		if (!dateString) return 'N/A';
+		try {
+			const date = new Date(dateString);
+			return date.toLocaleString(undefined, {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+		} catch {
+			return 'Invalid Date';
+		}
+	}
+
+
+	// Format track name with config in brackets
+	function formatTrackName(trackName: string | null, trackConfig: string | null): string {
+		if (!trackName) return 'N/A';
+		if (trackConfig) {
+			return `${trackName} (${trackConfig})`;
+		}
+		return trackName;
+	}
+
 
 	// Date formatting function
 	function formatDate(dateString: string): string {
@@ -125,34 +158,6 @@
 		points: team.points
 	}));
 
-	// DataTable options for drivers
-	const driverTableOptions: DataTableOptions = {
-		paging: true,
-		perPage: 25,
-		searchable: true,
-		columns: [
-			{ select: 0, sort: 'asc', hidden: false, type: 'number' }, // Position
-			{ select: 1, hidden: false, type: 'string' }, // Name
-			{ select: 2, hidden: false, type: 'string' }, // Team
-			{
-				select: 3,
-				hidden: false,
-				type: 'string',
-				render: (data: any, row: any) => {
-					if (!row.nationCode || row.nationCode === '') return row.nation || '';
-					return `<div style="display: flex; align-items: center; gap: 4px;">
-                        <span style="font-size: 16px;">${getCountryFlag(row.nationCode)}</span>
-                        <span>${row.nation || ''}</span>
-                    </div>`;
-				}
-			}, // Nation with flag
-			{ select: 4, hidden: false, type: 'string' }, // Car
-			{ select: 5, hidden: false, type: 'number' }, // Points
-			{ select: 6, hidden: false, type: 'number' }, // Ballast
-			{ select: 7, hidden: false, type: 'number' } // Restrictor
-		]
-	};
-
 	// Function to get country flag emoji
 	function getCountryFlag(countryCode: string): string {
 		if (!countryCode) return '';
@@ -162,18 +167,6 @@
 			.map((char) => 127397 + char.charCodeAt(0));
 		return String.fromCodePoint(...codePoints);
 	}
-
-	// DataTable options for teams
-	const teamTableOptions: DataTableOptions = {
-		paging: true,
-		perPage: 25,
-		searchable: true,
-		columns: [
-			{ select: 0, sort: 'asc', hidden: false, type: 'number' }, // Position
-			{ select: 1, hidden: false, type: 'string' }, // Name
-			{ select: 2, hidden: false, type: 'number' } // Points
-		]
-	};
 </script>
 
 <svelte:head>
@@ -346,6 +339,14 @@
 					>
 						Team Standings
 					</button>
+					<button
+						class="border-b-2 px-1 py-2 text-sm font-medium {selectedTab === 'races'
+							? 'border-blue-500 text-blue-600'
+							: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+						onclick={() => (selectedTab = 'races')}
+					>
+						Races
+					</button>
 				</nav>
 			</div>
 		</div>
@@ -451,6 +452,72 @@
 											</td>
 											<td class="px-6 py-4 font-medium">
 												{team.points}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</div>
+			{:else if selectedTab === 'races'}
+				<div class="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
+					<h2 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">Championship Races</h2>
+					{#if data.races.length === 0}
+						<p class="py-8 text-center text-gray-400">No race data available for this championship.</p>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+								<thead
+									class="bg-gray-50 text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400"
+								>
+									<tr>
+										<th scope="col" class="px-6 py-3">Event Name</th>
+										<th scope="col" class="px-6 py-3">Track</th>
+										<th scope="col" class="px-6 py-3">Race Date</th>
+										<th scope="col" class="px-6 py-3">Podium</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each data.races as raceWithPodium}
+										<tr
+											class="border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600"
+										>
+											<td class="px-6 py-4">
+												<a
+													data-umami-event="navigate-to-race-details"
+													data-umami-event-race-id={raceWithPodium.race.id}
+													href="/race/{raceWithPodium.race.id}"
+													class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold underline"
+												>
+													{raceWithPodium.race.event_name || 'N/A'}
+												</a>
+											</td>
+											<td class="px-6 py-4">
+												{formatTrackName(raceWithPodium.race.track_name, raceWithPodium.race.track_config)}
+											</td>
+											<td class="px-6 py-4">
+												{formatRaceDate(raceWithPodium.race.race_date)}
+											</td>
+											<td class="px-6 py-4">
+												{#if raceWithPodium.podium && raceWithPodium.podium.length > 0}
+													{#each raceWithPodium.podium as podiumDriver, index}
+														{#if index > 0}, {/if}
+														{@const isLast = index === raceWithPodium.podium.length - 1}
+														{#if podiumDriver.driverGUID && podiumDriver.driverGUID !== 'unknown' && podiumDriver.driverGUID !== null}
+															{podiumDriver.position}. <a
+																data-umami-event="navigate-to-driver-details"
+																data-umami-event-driver-guid={podiumDriver.driverGUID}
+																href="/driver/{podiumDriver.driverGUID}"
+																class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+															>{podiumDriver.driverName}</a>
+														{:else}
+															{podiumDriver.position}. {podiumDriver.driverName}
+														{/if}
+													{/each}
+												{:else}
+													N/A
+												{/if}
 											</td>
 										</tr>
 									{/each}
