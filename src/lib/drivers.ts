@@ -62,3 +62,40 @@ export async function getDriverByGUID(driverGUID: string): Promise<Driver | null
 		throw error;
 	}
 }
+
+// Get drivers by list of GUIDs
+export async function getDriversByGUIDs(driverGUIDs: (string | null)[]): Promise<Map<string, Driver>> {
+	try {
+		// Filter out nulls and get unique GUIDs
+		const validGUIDs = [...new Set(driverGUIDs.filter((guid): guid is string => guid !== null))];
+		
+		if (validGUIDs.length === 0) {
+			return new Map();
+		}
+
+		// Query with 'in' filter - try as strings first
+		const { data, error } = await supabase
+			.from('drivers')
+			.select('*')
+			.in('driver_guid', validGUIDs);
+
+		if (error) {
+			throw error;
+		}
+
+		// Create a map of driver_guid -> Driver
+		const driverMap = new Map<string, Driver>();
+		if (data) {
+			for (const driver of data) {
+				if (driver.driver_guid) {
+					driverMap.set(String(driver.driver_guid), driver);
+				}
+			}
+		}
+
+		return driverMap;
+	} catch (error) {
+		console.error('Error fetching drivers by GUIDs:', error);
+		return new Map();
+	}
+}
