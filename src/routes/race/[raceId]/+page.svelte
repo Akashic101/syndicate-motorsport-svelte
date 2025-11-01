@@ -5,6 +5,7 @@
 	import { Table } from '@flowbite-svelte-plugins/datatable';
 	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
 	import { onMount } from 'svelte';
+	import { getFixedTrackName } from '$lib/trackAliases';
 
 	let { data } = $props<{
 		data: {
@@ -13,6 +14,7 @@
 			laps: RaceLap[];
 			driversMap: Record<string, Driver>;
 			championship: Championship | null;
+			trackAliasMap: Record<string, string>;
 		};
 	}>();
 	let race = $derived(data.race);
@@ -114,7 +116,7 @@
 		// Sort laps by timestamp for each driver and create table data
 		for (const group of groups.values()) {
 			group.laps.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-			
+
 			// Transform laps to table data (raw values, not HTML)
 			group.tableData = group.laps.map((lap, index) => ({
 				'Lap #': index + 1,
@@ -165,9 +167,10 @@
 			const validLapTimes = sortedLaps
 				.map((lap) => lap.lap_time)
 				.filter((time): time is number => time !== null && time !== undefined);
-			
+
 			const fastestLap = validLapTimes.length > 0 ? Math.min(...validLapTimes) : null;
-			const totalRaceTime = validLapTimes.length > 0 ? validLapTimes.reduce((sum, time) => sum + time, 0) : null;
+			const totalRaceTime =
+				validLapTimes.length > 0 ? validLapTimes.reduce((sum, time) => sum + time, 0) : null;
 
 			positions.push({
 				driverGUID: group.driverGUID,
@@ -322,7 +325,7 @@
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Track Name</p>
 					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{race.track_name || 'N/A'}
+						{getFixedTrackName(race.track_name, data.trackAliasMap) || 'N/A'}
 					</p>
 				</div>
 
@@ -383,7 +386,13 @@
 				<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Fastest Lap</p>
 				<p class="text-2xl font-bold text-gray-900 dark:text-white">
 					{#if laps.length > 0}
-						{formatLapTime(Math.min(...laps.map((l: RaceLap) => l.lap_time).filter((t: number | null): t is number => t !== null)))}
+						{formatLapTime(
+							Math.min(
+								...laps
+									.map((l: RaceLap) => l.lap_time)
+									.filter((t: number | null): t is number => t !== null)
+							)
+						)}
 					{:else}
 						N/A
 					{/if}
@@ -412,7 +421,10 @@
 			{:else}
 				{#each lapsByDriverSorted as group}
 					{@const sectionId = getDriverLapSectionId(group.driverGUID, group.car?.car_id ?? null)}
-					<div id={sectionId} class="mb-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700 scroll-mt-8">
+					<div
+						id={sectionId}
+						class="mb-8 scroll-mt-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700"
+					>
 						<div class="mb-4 flex items-center justify-between">
 							<h3 class="text-xl font-semibold text-gray-900 dark:text-white">
 								{#if group.driverGUID && group.driverGUID !== 'unknown'}
@@ -493,4 +505,3 @@
 		{/if}
 	</div>
 </div>
-

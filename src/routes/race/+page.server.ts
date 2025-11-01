@@ -9,6 +9,7 @@ import {
 } from '$lib/races';
 import { getChampionshipByChampionshipId } from '$lib/championships';
 import { getDriversByGUIDs } from '$lib/drivers';
+import { getAllTrackAliases, createTrackAliasObject } from '$lib/trackAliases';
 
 interface RaceWithDetails {
 	race: RaceSession;
@@ -62,7 +63,10 @@ export const load: PageServerLoad = async () => {
 					const driversByName = Object.fromEntries(driversMap);
 
 					// Group laps by driver/car
-					const groups = new Map<string, { driverGUID: string; car: RaceCar | null; laps: RaceLap[] }>();
+					const groups = new Map<
+						string,
+						{ driverGUID: string; car: RaceCar | null; laps: RaceLap[] }
+					>();
 
 					for (const lap of laps) {
 						const driverGUID = lap.driver_guid || 'unknown';
@@ -84,7 +88,9 @@ export const load: PageServerLoad = async () => {
 					const positions = Array.from(groups.values())
 						.filter((group) => group.laps.length > 0)
 						.map((group) => {
-							const sortedLaps = [...group.laps].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+							const sortedLaps = [...group.laps].sort(
+								(a, b) => (a.timestamp || 0) - (b.timestamp || 0)
+							);
 							const lastLap = sortedLaps[sortedLaps.length - 1];
 							const driver = driversByName[group.driverGUID];
 							const driverName =
@@ -111,8 +117,7 @@ export const load: PageServerLoad = async () => {
 					const allFastestLaps = positions
 						.map((p) => p.fastestLap)
 						.filter((time): time is number => time !== null && time !== undefined);
-					const overallFastestLap =
-						allFastestLaps.length > 0 ? Math.min(...allFastestLaps) : null;
+					const overallFastestLap = allFastestLaps.length > 0 ? Math.min(...allFastestLaps) : null;
 
 					// Sort by finishing position
 					positions.sort((a, b) => {
@@ -149,10 +154,13 @@ export const load: PageServerLoad = async () => {
 			})
 		);
 
-		return { races: racesWithDetails };
+		// Fetch track aliases once and create object (for SvelteKit serialization)
+		const trackAliases = await getAllTrackAliases();
+		const trackAliasMap = createTrackAliasObject(trackAliases);
+
+		return { races: racesWithDetails, trackAliasMap };
 	} catch (err) {
 		console.error('Error loading races from Supabase:', err);
-		return { races: [] };
+		return { races: [], trackAliasMap: {} };
 	}
 };
-

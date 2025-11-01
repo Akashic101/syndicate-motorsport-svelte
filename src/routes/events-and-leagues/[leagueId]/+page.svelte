@@ -3,6 +3,7 @@
 	import { getChampionshipOGData } from '$lib/og';
 	import { getSupabaseImageUrl } from '$lib/imageUtils';
 	import type { RaceSession } from '$lib/types';
+	import { getFixedTrackName } from '$lib/trackAliases';
 	// Note: Using emoji flags instead of svelte-flags for better compatibility
 
 	// Props from server
@@ -18,6 +19,7 @@
 			teams: any[];
 			races: RaceWithPodium[];
 			stats: any;
+			trackAliasMap: Record<string, string>;
 		};
 	}>();
 
@@ -43,16 +45,12 @@
 		}
 	}
 
-
-	// Format track name with config in brackets
-	function formatTrackName(trackName: string | null, trackConfig: string | null): string {
-		if (!trackName) return 'N/A';
-		if (trackConfig) {
-			return `${trackName} (${trackConfig})`;
-		}
-		return trackName;
+	// Format track name with config in brackets, using track aliases
+	function formatTrackName(trackName: string | null): string {
+		const fixedName = getFixedTrackName(trackName, data.trackAliasMap);
+		if (!fixedName) return 'N/A';
+		return fixedName;
 	}
-
 
 	// Date formatting function
 	function formatDate(dateString: string): string {
@@ -464,7 +462,9 @@
 				<div class="rounded-lg bg-white p-6 shadow-md dark:bg-gray-800">
 					<h2 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">Championship Races</h2>
 					{#if data.races.length === 0}
-						<p class="py-8 text-center text-gray-400">No race data available for this championship.</p>
+						<p class="py-8 text-center text-gray-400">
+							No race data available for this championship.
+						</p>
 					{:else}
 						<div class="overflow-x-auto">
 							<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
@@ -488,13 +488,13 @@
 													data-umami-event="navigate-to-race-details"
 													data-umami-event-race-id={raceWithPodium.race.id}
 													href="/race/{raceWithPodium.race.id}"
-													class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold underline"
+													class="font-semibold text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
 												>
 													{raceWithPodium.race.event_name || 'N/A'}
 												</a>
 											</td>
 											<td class="px-6 py-4">
-												{formatTrackName(raceWithPodium.race.track_name, raceWithPodium.race.track_config)}
+												{formatTrackName(raceWithPodium.race.track_name)}
 											</td>
 											<td class="px-6 py-4">
 												{formatRaceDate(raceWithPodium.race.race_date)}
@@ -502,15 +502,18 @@
 											<td class="px-6 py-4">
 												{#if raceWithPodium.podium && raceWithPodium.podium.length > 0}
 													{#each raceWithPodium.podium as podiumDriver, index}
-														{#if index > 0}, {/if}
+														{#if index > 0},
+														{/if}
 														{@const isLast = index === raceWithPodium.podium.length - 1}
 														{#if podiumDriver.driverGUID && podiumDriver.driverGUID !== 'unknown' && podiumDriver.driverGUID !== null}
-															{podiumDriver.position}. <a
+															{podiumDriver.position}.
+															<a
 																data-umami-event="navigate-to-driver-details"
 																data-umami-event-driver-guid={podiumDriver.driverGUID}
 																href="/driver/{podiumDriver.driverGUID}"
 																class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-															>{podiumDriver.driverName}</a>
+																>{podiumDriver.driverName}</a
+															>
 														{:else}
 															{podiumDriver.position}. {podiumDriver.driverName}
 														{/if}

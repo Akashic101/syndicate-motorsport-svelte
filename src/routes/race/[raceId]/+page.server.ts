@@ -10,6 +10,7 @@ import {
 import { getDriversByGUIDs } from '$lib/drivers';
 import { getChampionshipByChampionshipId } from '$lib/championships';
 import type { Championship } from '$lib/types';
+import { getAllTrackAliases, createTrackAliasObject } from '$lib/trackAliases';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -43,18 +44,24 @@ export const load: PageServerLoad = async ({ params }) => {
 			])
 		];
 
-		// Fetch driver information and championship in parallel
-		const [driversMap, championship] = await Promise.all([
+		// Fetch driver information, championship, and track aliases in parallel
+		const [driversMap, championship, trackAliases] = await Promise.all([
 			getDriversByGUIDs(driverGUIDs),
-			race.championship_id ? getChampionshipByChampionshipId(race.championship_id) : Promise.resolve(null)
+			race.championship_id
+				? getChampionshipByChampionshipId(race.championship_id)
+				: Promise.resolve(null),
+			getAllTrackAliases()
 		]);
+
+		const trackAliasMap = createTrackAliasObject(trackAliases);
 
 		return {
 			race,
 			cars,
 			laps,
 			driversMap: Object.fromEntries(driversMap),
-			championship
+			championship,
+			trackAliasMap
 		};
 	} catch (err) {
 		if (err instanceof Error && 'status' in err) {
@@ -64,4 +71,3 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(500, 'Failed to load race data');
 	}
 };
-

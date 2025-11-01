@@ -3,19 +3,25 @@
 	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
 	import type { LapRecord } from '$lib/lapRecords';
 	import { getLapRecordsOGData } from '$lib/og';
+	import { getFixedTrackName } from '$lib/trackAliases';
 
-	export let data: { lapRecords: LapRecord[] };
+	export let data: { lapRecords: LapRecord[]; trackAliasMap: Record<string, string> };
 
 	// Generate Open Graph data for lap records page
 	const ogData = getLapRecordsOGData();
 
-	// Sort lap records by lap time (ascending - fastest first)
-	const lapRecords: LapRecord[] = (data.lapRecords ?? []).sort((a, b) => {
-		// Convert lap times to comparable format (remove colons and compare as numbers)
-		const timeA = (a.lap_time || '').replace(/:/g, '');
-		const timeB = (b.lap_time || '').replace(/:/g, '');
-		return timeA.localeCompare(timeB);
-	});
+	// Sort lap records by lap time (ascending - fastest first) and apply track name aliases
+	const lapRecords: LapRecord[] = (data.lapRecords ?? [])
+		.sort((a, b) => {
+			// Convert lap times to comparable format (remove colons and compare as numbers)
+			const timeA = (a.lap_time || '').replace(/:/g, '');
+			const timeB = (b.lap_time || '').replace(/:/g, '');
+			return timeA.localeCompare(timeB);
+		})
+		.map((record) => ({
+			...record,
+			track_name: getFixedTrackName(record.track_name, data.trackAliasMap)
+		}));
 
 	const tableOptions: DataTableOptions = {
 		paging: true,

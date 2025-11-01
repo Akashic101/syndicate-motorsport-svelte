@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RaceSession } from '$lib/races';
+	import { getFixedTrackName } from '$lib/trackAliases';
 
 	interface RaceWithDetails {
 		race: RaceSession;
@@ -9,7 +10,9 @@
 	}
 
 	// Props from server
-	let { data } = $props<{ data: { races: RaceWithDetails[] } }>();
+	let { data } = $props<{
+		data: { races: RaceWithDetails[]; trackAliasMap: Record<string, string> };
+	}>();
 	let races: RaceWithDetails[] = data?.races ?? [];
 	let isLoading = races.length === 0;
 
@@ -30,13 +33,12 @@
 		}
 	}
 
-	// Format track name with config in brackets
-	function formatTrackName(trackName: string | null, trackConfig: string | null): string {
-		if (!trackName) return 'N/A';
-		if (trackConfig) {
-			return `${trackName} (${trackConfig})`;
-		}
-		return trackName;
+	// Format track name with config in brackets, using track aliases
+	function formatTrackName(trackName: string | null): string {
+		const fixedName = getFixedTrackName(trackName, data.trackAliasMap);
+		if (!fixedName) return 'N/A';
+
+		return fixedName;
 	}
 
 	// Format lap time (milliseconds to mm:ss.SSS)
@@ -74,9 +76,7 @@
 				</thead>
 				<tbody>
 					{#each Array(8) as _}
-						<tr
-							class="border-b bg-white dark:border-gray-700 dark:bg-gray-800"
-						>
+						<tr class="border-b bg-white dark:border-gray-700 dark:bg-gray-800">
 							{#each Array(6) as _}
 								<td class="px-6 py-4">
 									<div role="status" class="max-w-sm animate-pulse">
@@ -118,13 +118,13 @@
 									data-umami-event="navigate-to-race-details"
 									data-umami-event-race-id={raceWithDetails.race.id}
 									href="/race/{raceWithDetails.race.id}"
-									class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold underline"
+									class="font-semibold text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
 								>
 									{raceWithDetails.race.event_name || `Race #${raceWithDetails.race.id}`}
 								</a>
 							</td>
 							<td class="px-6 py-4">
-								{formatTrackName(raceWithDetails.race.track_name, raceWithDetails.race.track_config)}
+								{formatTrackName(raceWithDetails.race.track_name)}
 							</td>
 							<td class="px-6 py-4">
 								{formatDate(raceWithDetails.race.race_date)}
@@ -144,14 +144,17 @@
 							<td class="px-6 py-4">
 								{#if raceWithDetails.podium && raceWithDetails.podium.length > 0}
 									{#each raceWithDetails.podium as podiumDriver, index}
-										{#if index > 0}, {/if}
+										{#if index > 0},
+										{/if}
 										{#if podiumDriver.driverGUID && podiumDriver.driverGUID !== 'unknown' && podiumDriver.driverGUID !== null}
-											{podiumDriver.position}. <a
+											{podiumDriver.position}.
+											<a
 												data-umami-event="navigate-to-driver-details"
 												data-umami-event-driver-guid={podiumDriver.driverGUID}
 												href="/driver/{podiumDriver.driverGUID}"
 												class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-											>{podiumDriver.driverName}</a>
+												>{podiumDriver.driverName}</a
+											>
 										{:else}
 											{podiumDriver.position}. {podiumDriver.driverName}
 										{/if}
@@ -174,4 +177,3 @@
 		</div>
 	{/if}
 </div>
-

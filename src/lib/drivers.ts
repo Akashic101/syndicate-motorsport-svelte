@@ -64,11 +64,13 @@ export async function getDriverByGUID(driverGUID: string): Promise<Driver | null
 }
 
 // Get drivers by list of GUIDs
-export async function getDriversByGUIDs(driverGUIDs: (string | null)[]): Promise<Map<string, Driver>> {
+export async function getDriversByGUIDs(
+	driverGUIDs: (string | null)[]
+): Promise<Map<string, Driver>> {
 	try {
 		// Filter out nulls and get unique GUIDs
 		const validGUIDs = [...new Set(driverGUIDs.filter((guid): guid is string => guid !== null))];
-		
+
 		if (validGUIDs.length === 0) {
 			return new Map();
 		}
