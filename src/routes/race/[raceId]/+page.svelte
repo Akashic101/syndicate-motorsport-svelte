@@ -74,6 +74,10 @@
 		car: RaceCar | null;
 		laps: RaceLap[];
 		tableData: Array<Record<string, any>>;
+		fastestLap: number | null;
+		fastestSector1: number | null;
+		fastestSector2: number | null;
+		fastestSector3: number | null;
 	}
 
 	// Get unique ID for driver lap section
@@ -83,12 +87,6 @@
 		const carPart = carId !== null ? `_${carId}` : '';
 		return `driver-laps-${safeGUID}${carPart}`;
 	}
-
-	// Render fastest lap indicator
-	const renderFastest = (data: any) => {
-		if (data === '—' || !data) return '—';
-		return '<span class="text-green-600 dark:text-green-400">✓</span>';
-	};
 
 	// Transform laps to table data (store raw values, not HTML)
 	let lapsByDriver = $derived.by(() => {
@@ -106,7 +104,11 @@
 					driverName: getDriverName(driverGUID),
 					car,
 					laps: [],
-					tableData: []
+					tableData: [],
+					fastestLap: null,
+					fastestSector1: null,
+					fastestSector2: null,
+					fastestSector3: null
 				});
 			}
 
@@ -117,16 +119,51 @@
 		for (const group of groups.values()) {
 			group.laps.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-			// Transform laps to table data (raw values, not HTML)
+			// Calculate fastest lap time for this driver
+			const validLapTimes = group.laps
+				.map((lap) => lap.lap_time)
+				.filter((time): time is number => time !== null && time !== undefined);
+			group.fastestLap = validLapTimes.length > 0 ? Math.min(...validLapTimes) : null;
+
+			// Calculate fastest sector times for this driver
+			const validSector1 = group.laps
+				.map((lap) => lap.sector1)
+				.filter((time): time is number => time !== null && time !== undefined);
+			const validSector2 = group.laps
+				.map((lap) => lap.sector2)
+				.filter((time): time is number => time !== null && time !== undefined);
+			const validSector3 = group.laps
+				.map((lap) => lap.sector3)
+				.filter((time): time is number => time !== null && time !== undefined);
+
+			group.fastestSector1 = validSector1.length > 0 ? Math.min(...validSector1) : null;
+			group.fastestSector2 = validSector2.length > 0 ? Math.min(...validSector2) : null;
+			group.fastestSector3 = validSector3.length > 0 ? Math.min(...validSector3) : null;
+
+			// Helper function to format time with highlighting if fastest
+			const formatTimeWithHighlight = (
+				time: number | null,
+				fastestTime: number | null,
+				formatter: (ms: number | null) => string
+			): string => {
+				const formatted = formatter(time);
+				if (formatted === 'N/A') return formatted;
+				// Check if this time matches the fastest for this driver
+				if (fastestTime !== null && time !== null && time === fastestTime) {
+					return `<span class="text-green-600 dark:text-green-400 font-semibold">${formatted}</span>`;
+				}
+				return formatted;
+			};
+
+			// Transform laps to table data (highlight fastest lap and sectors)
 			group.tableData = group.laps.map((lap, index) => ({
 				'Lap #': index + 1,
-				'Lap Time': formatLapTime(lap.lap_time),
-				'Sector 1': formatSectorTime(lap.sector1),
-				'Sector 2': formatSectorTime(lap.sector2),
-				'Sector 3': formatSectorTime(lap.sector3),
+				'Lap Time': formatTimeWithHighlight(lap.lap_time, group.fastestLap, formatLapTime),
+				'Sector 1': formatTimeWithHighlight(lap.sector1, group.fastestSector1, formatSectorTime),
+				'Sector 2': formatTimeWithHighlight(lap.sector2, group.fastestSector2, formatSectorTime),
+				'Sector 3': formatTimeWithHighlight(lap.sector3, group.fastestSector3, formatSectorTime),
 				Tyre: lap.tyre ?? 'N/A',
-				Cuts: lap.cuts ?? 0,
-				Fastest: lap.contributed_to_fastest_lap ? '✓' : '—'
+				Cuts: lap.cuts ?? 0
 			}));
 		}
 
@@ -134,12 +171,20 @@
 		return Array.from(groups.values());
 	});
 
+	// Render function that passes through HTML (for time columns)
+	const renderHtml = (data: any) => {
+		return data || 'N/A';
+	};
+
 	// DataTable options for laps
 	const lapsTableOptions: DataTableOptions = {
 		paging: false,
 		searchable: false,
 		columns: [
-			{ select: 7, render: renderFastest, type: 'string' } // Fastest column with render function
+			{ select: 1, render: renderHtml, type: 'string' }, // Lap Time with HTML highlighting
+			{ select: 2, render: renderHtml, type: 'string' }, // Sector 1 with HTML highlighting
+			{ select: 3, render: renderHtml, type: 'string' }, // Sector 2 with HTML highlighting
+			{ select: 4, render: renderHtml, type: 'string' } // Sector 3 with HTML highlighting
 		]
 	};
 
@@ -358,8 +403,8 @@
 
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Type</p>
-					<p class="text-lg font-semibold text-gray-900 dark:text-white">
-						{race.type || 'N/A'}
+					<p class="text-lg font-semibold text-gray-900 capitalize dark:text-white">
+						{race.type.toLowerCase() || 'N/A'}
 					</p>
 				</div>
 
@@ -421,6 +466,12 @@
 			{:else}
 				{#each lapsByDriverSorted as group}
 					{@const sectionId = getDriverLapSectionId(group.driverGUID, group.car?.car_id ?? null)}
+					{@const theoreticalFastest =
+						group.fastestSector1 !== null &&
+						group.fastestSector2 !== null &&
+						group.fastestSector3 !== null
+							? group.fastestSector1 + group.fastestSector2 + group.fastestSector3
+							: null}
 					<div
 						id={sectionId}
 						class="mb-8 scroll-mt-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700"
@@ -438,16 +489,26 @@
 									{group.driverName}
 								{/if}
 							</h3>
-							<div class="text-sm text-gray-500 dark:text-gray-400">
-								{#if group.car}
-									<span>Car #{group.car.car_id}</span>
-									{#if group.car.model}
-										<span class="mx-2">•</span>
-										<span>{group.car.model}</span>
-									{/if}
+							<div class="flex flex-col items-end gap-1">
+								{#if theoreticalFastest !== null}
+									<div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+										<span class="text-gray-500 dark:text-gray-400">Theoretical Fastest: </span>
+										<span class="font-semibold">
+											{formatLapTime(theoreticalFastest)}
+										</span>
+									</div>
 								{/if}
-								<span class="mx-2">•</span>
-								<span>{group.laps.length} {group.laps.length === 1 ? 'lap' : 'laps'}</span>
+								<div class="text-sm text-gray-500 dark:text-gray-400">
+									{#if group.car}
+										<span>Car #{group.car.car_id}</span>
+										{#if group.car.model}
+											<span class="mx-2">•</span>
+											<span>{group.car.model}</span>
+										{/if}
+									{/if}
+									<span class="mx-2">•</span>
+									<span>{group.laps.length} {group.laps.length === 1 ? 'lap' : 'laps'}</span>
+								</div>
 							</div>
 						</div>
 						<Table items={group.tableData} dataTableOptions={lapsTableOptions} />
