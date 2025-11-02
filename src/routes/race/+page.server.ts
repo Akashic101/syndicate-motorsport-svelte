@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import {
-	getAllRaceSessions,
+	getRaceSessions,
 	getRaceCarsBySessionId,
 	getRaceLapsBySessionId,
 	type RaceSession,
@@ -18,9 +18,15 @@ interface RaceWithDetails {
 	fastestLap: number | null; // in milliseconds
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	try {
-		const races: RaceSession[] = await getAllRaceSessions();
+		// Load initial batch of races (1000 is a good balance between speed and data)
+		// The DataTable will handle client-side pagination of this initial set
+		const initialLimit = 1000;
+		const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+		const limit = parseInt(url.searchParams.get('limit') || initialLimit.toString(), 10);
+
+		const { data: races, total } = await getRaceSessions(limit, offset);
 
 		// Calculate podium and fastest lap for each race
 		const racesWithDetails = await Promise.all(
@@ -158,9 +164,14 @@ export const load: PageServerLoad = async () => {
 		const trackAliases = await getAllTrackAliases();
 		const trackAliasMap = createTrackAliasObject(trackAliases);
 
-		return { races: racesWithDetails, trackAliasMap };
+		return {
+			races: racesWithDetails,
+			trackAliasMap,
+			totalRaces: total,
+			hasMore: offset + races.length < total
+		};
 	} catch (err) {
 		console.error('Error loading races from Supabase:', err);
-		return { races: [], trackAliasMap: {} };
+		return { races: [], trackAliasMap: {}, totalRaces: 0, hasMore: false };
 	}
 };

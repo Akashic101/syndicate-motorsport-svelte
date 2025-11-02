@@ -4,23 +4,44 @@ import type { RaceSession, RaceCar, RaceLap } from './types';
 // Re-export types for convenience
 export type { RaceSession, RaceCar, RaceLap } from './types';
 
-// Get all race sessions
-export async function getAllRaceSessions(): Promise<RaceSession[]> {
+// Get race sessions with pagination
+export async function getRaceSessions(
+	limit?: number,
+	offset?: number
+): Promise<{ data: RaceSession[]; total: number }> {
 	try {
-		const { data, error } = await supabase
+		let query = supabase
 			.from('race_sessions')
-			.select('*')
+			.select('*', { count: 'exact' })
 			.order('race_date', { ascending: false, nullsFirst: false });
+
+		if (limit !== undefined && offset !== undefined) {
+			// range is inclusive on both ends, so offset to offset+limit-1
+			query = query.range(offset, offset + limit - 1);
+		} else if (limit !== undefined) {
+			query = query.limit(limit);
+		}
+
+		const { data, error, count } = await query;
 
 		if (error) {
 			throw error;
 		}
 
-		return data || [];
+		return {
+			data: data || [],
+			total: count || 0
+		};
 	} catch (error) {
 		console.error('Error fetching race sessions:', error);
 		throw error;
 	}
+}
+
+// Get all race sessions (for backwards compatibility)
+export async function getAllRaceSessions(): Promise<RaceSession[]> {
+	const result = await getRaceSessions();
+	return result.data;
 }
 
 // Get race session by ID
