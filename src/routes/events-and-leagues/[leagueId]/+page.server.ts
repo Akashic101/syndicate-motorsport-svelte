@@ -9,6 +9,7 @@ import {
 import type { RaceSession, RaceCar, RaceLap } from '$lib/types';
 import { getDriversByGUIDs } from '$lib/drivers';
 import { getAllTrackAliases, createTrackAliasObject } from '$lib/trackAliases';
+import { getAllCarAliases, createCarAliasObject } from '$lib/carAliases';
 
 export const load: PageServerLoad = async ({ params }) => {
 	try {
@@ -246,9 +247,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			teamCount: teams.length
 		};
 
-		// Fetch track aliases once and create object (for SvelteKit serialization)
-		const trackAliases = await getAllTrackAliases();
+		// Fetch track aliases and car aliases once and create objects (for SvelteKit serialization)
+		const [trackAliases, carAliases] = await Promise.all([
+			getAllTrackAliases(),
+			getAllCarAliases()
+		]);
 		const trackAliasMap = createTrackAliasObject(trackAliases);
+		const carAliasMap = createCarAliasObject(carAliases);
 
 		return {
 			championship,
@@ -256,7 +261,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			teams,
 			races: racesWithPodiums,
 			stats,
-			trackAliasMap
+			trackAliasMap,
+			carAliasMap
 		};
 	} catch (error) {
 		console.error('Error loading league data:', error);

@@ -11,6 +11,7 @@ import { getDriversByGUIDs } from '$lib/drivers';
 import { getChampionshipByChampionshipId } from '$lib/championships';
 import type { Championship } from '$lib/types';
 import { getAllTrackAliases, createTrackAliasObject } from '$lib/trackAliases';
+import { getAllCarAliases, createCarAliasObject } from '$lib/carAliases';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -44,16 +45,18 @@ export const load: PageServerLoad = async ({ params }) => {
 			])
 		];
 
-		// Fetch driver information, championship, and track aliases in parallel
-		const [driversMap, championship, trackAliases] = await Promise.all([
+		// Fetch driver information, championship, track aliases, and car aliases in parallel
+		const [driversMap, championship, trackAliases, carAliases] = await Promise.all([
 			getDriversByGUIDs(driverGUIDs),
 			race.championship_id
 				? getChampionshipByChampionshipId(race.championship_id)
 				: Promise.resolve(null),
-			getAllTrackAliases()
+			getAllTrackAliases(),
+			getAllCarAliases()
 		]);
 
 		const trackAliasMap = createTrackAliasObject(trackAliases);
+		const carAliasMap = createCarAliasObject(carAliases);
 
 		return {
 			race,
@@ -61,7 +64,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			laps,
 			driversMap: Object.fromEntries(driversMap),
 			championship,
-			trackAliasMap
+			trackAliasMap,
+			carAliasMap
 		};
 	} catch (err) {
 		if (err instanceof Error && 'status' in err) {

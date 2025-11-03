@@ -49,7 +49,6 @@
 		<NavLi class="text-lg" data-umami-event="navigate-to-lap-records" href="/lap-records"
 			>Lap Records</NavLi
 		>
-		<NavLi class="text-lg" data-umami-event="navigate-to-races" href="/race">Races</NavLi>
 		<NavLi class="text-lg" data-umami-event="navigate-to-support-us" href="/support-us"
 			>Support Us</NavLi
 		>

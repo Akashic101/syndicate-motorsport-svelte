@@ -6,6 +6,7 @@
 	import type { DataTableOptions } from '@flowbite-svelte-plugins/datatable';
 	import { onMount } from 'svelte';
 	import { getFixedTrackName } from '$lib/trackAliases';
+	import { getFixedCarName } from '$lib/carAliases';
 
 	let { data } = $props<{
 		data: {
@@ -15,6 +16,7 @@
 			driversMap: Record<string, Driver>;
 			championship: Championship | null;
 			trackAliasMap: Record<string, string>;
+			carAliasMap: Record<string, string>;
 		};
 	}>();
 	let race = $derived(data.race);
@@ -279,7 +281,7 @@
 			'Total Laps': pos.totalLaps,
 			'Fastest Lap': pos.fastestLap ? formatLapTime(pos.fastestLap) : 'N/A',
 			'Total Race Time': pos.totalRaceTime ? formatLapTime(pos.totalRaceTime) : 'N/A',
-			Model: pos.car?.model ?? 'N/A',
+			Model: pos.car?.model ? (getFixedCarName(pos.car.model, data.carAliasMap) ?? 'N/A') : 'N/A',
 			'Ballast (kg)': pos.car?.ballast_kg ?? 'N/A',
 			DriverGUID: pos.driverGUID,
 			CarID: pos.car?.car_id ?? -1, // Use -1 instead of null for table compatibility
@@ -503,7 +505,10 @@
 										<span>Car #{group.car.car_id}</span>
 										{#if group.car.model}
 											<span class="mx-2">•</span>
-											<span>{group.car.model}</span>
+											<span
+												>{getFixedCarName(group.car.model, data.carAliasMap) ||
+													group.car.model}</span
+											>
 										{/if}
 									{/if}
 									<span class="mx-2">•</span>

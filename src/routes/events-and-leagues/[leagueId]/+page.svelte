@@ -4,6 +4,7 @@
 	import { getSupabaseImageUrl } from '$lib/imageUtils';
 	import type { RaceSession } from '$lib/types';
 	import { getFixedTrackName } from '$lib/trackAliases';
+	import { getFixedCarName } from '$lib/carAliases';
 	// Note: Using emoji flags instead of svelte-flags for better compatibility
 
 	// Props from server
@@ -20,6 +21,7 @@
 			races: RaceWithPodium[];
 			stats: any;
 			trackAliasMap: Record<string, string>;
+			carAliasMap: Record<string, string>;
 		};
 	}>();
 
@@ -143,7 +145,7 @@
 		team: driver.team || '',
 		nation: driver.nation || '',
 		nationCode: countryCodeMap[driver.nation] || '',
-		car: driver.car || '',
+		car: driver.car ? getFixedCarName(driver.car, data.carAliasMap) || driver.car : '',
 		points: driver.points,
 		ballast: driver.ballast || 0,
 		restrictor: driver.restrictor || 0

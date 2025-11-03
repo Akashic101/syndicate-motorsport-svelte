@@ -4,8 +4,13 @@
 	import type { LapRecord } from '$lib/lapRecords';
 	import { getLapRecordsOGData } from '$lib/og';
 	import { getFixedTrackName } from '$lib/trackAliases';
+	import { getFixedCarName } from '$lib/carAliases';
 
-	export let data: { lapRecords: LapRecord[]; trackAliasMap: Record<string, string> };
+	export let data: {
+		lapRecords: LapRecord[];
+		trackAliasMap: Record<string, string>;
+		carAliasMap: Record<string, string>;
+	};
 
 	// Generate Open Graph data for lap records page
 	const ogData = getLapRecordsOGData();
@@ -20,7 +25,8 @@
 		})
 		.map((record) => ({
 			...record,
-			track_name: getFixedTrackName(record.track_name, data.trackAliasMap)
+			track_name: getFixedTrackName(record.track_name, data.trackAliasMap),
+			car_model: getFixedCarName(record.car_model, data.carAliasMap)
 		}));
 
 	const tableOptions: DataTableOptions = {

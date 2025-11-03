@@ -57,9 +57,10 @@
 	let tableData = $derived(
 		races.map((raceWithDetails) => {
 			// Format podium as string for searchability, but store raw data for rendering
-			const podiumString = raceWithDetails.podium && raceWithDetails.podium.length > 0
-				? raceWithDetails.podium.map((p) => `${p.position}. ${p.driverName}`).join(', ')
-				: 'N/A';
+			const podiumString =
+				raceWithDetails.podium && raceWithDetails.podium.length > 0
+					? raceWithDetails.podium.map((p) => `${p.position}. ${p.driverName}`).join(', ')
+					: 'N/A';
 
 			return {
 				'Event Name': raceWithDetails.race.event_name || `Race #${raceWithDetails.race.id}`,
@@ -87,9 +88,10 @@
 	const raceByPodiumMap = $derived(
 		new Map(
 			races.map((r) => {
-				const podiumString = r.podium && r.podium.length > 0
-					? r.podium.map((p) => `${p.position}. ${p.driverName}`).join(', ')
-					: 'N/A';
+				const podiumString =
+					r.podium && r.podium.length > 0
+						? r.podium.map((p) => `${p.position}. ${p.driverName}`).join(', ')
+						: 'N/A';
 				return [podiumString, r];
 			})
 		)
