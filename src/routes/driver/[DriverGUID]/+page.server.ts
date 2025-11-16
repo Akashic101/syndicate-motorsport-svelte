@@ -12,13 +12,22 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(400, 'Invalid driver GUID');
 	}
 
-	const driver = await getDriverByGUID(driverGUID);
+	try {
+		const driver = await getDriverByGUID(driverGUID);
 
-	if (!driver) {
-		throw error(404, 'Driver not found');
+		if (!driver) {
+			console.error(`[+page.server] Driver not found for GUID: ${driverGUID}`);
+			throw error(404, 'Driver not found');
+		}
+
+		return {
+			driver
+		};
+	} catch (err) {
+		console.error(`[+page.server] Error loading driver ${driverGUID}:`, err);
+		if (err instanceof Error && 'status' in err) {
+			throw err;
+		}
+		throw error(500, 'Failed to load driver data');
 	}
-
-	return {
-		driver
-	};
 };

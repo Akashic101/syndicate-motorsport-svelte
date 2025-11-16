@@ -6,7 +6,7 @@
 	let driver = $derived(data.driver);
 
 	// Generate Open Graph data for driver page
-	const ogData = getDriverOGData(driver);
+	const ogData = $derived(getDriverOGData(driver));
 
 	function getBadgeStyle(license: string): string {
 		switch (license.toLowerCase()) {
@@ -68,20 +68,40 @@
 	</a>
 
 	<div class="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
-		<h1 class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
-			{driver.driver || 'Unknown Driver'}
-		</h1>
+		<div class="mb-6 flex items-center gap-4">
+			{#if driver.icon_url}
+				<img
+					src={driver.icon_url}
+					alt={driver.driver || 'Driver'}
+					class="h-16 w-16 rounded-full object-cover"
+				/>
+			{/if}
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+				{driver.driver || 'Unknown Driver'}
+			</h1>
+		</div>
 
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+		<!-- Basic Stats -->
+		<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
 			<div class="space-y-4">
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Rank</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-white">#{driver.rank || 'N/A'}</p>
+					{#if driver.percentile_rank !== null}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							Top {100 - (driver.percentile_rank || 0)}%
+						</p>
+					{/if}
 				</div>
 
 				<div>
 					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">ELO Rating</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-white">{driver.elo || 'N/A'}</p>
+					{#if driver.range_min !== null && driver.range_max !== null}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							Range: {driver.range_min} - {driver.range_max}
+						</p>
+					{/if}
 				</div>
 			</div>
 
@@ -95,6 +115,11 @@
 						>
 							{driver.license || 'N/A'}
 						</span>
+						{#if driver.next_license}
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Next: {driver.next_license}
+							</p>
+						{/if}
 					</div>
 				</div>
 
@@ -112,7 +137,140 @@
 			</div>
 		</div>
 
-		<div class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+		<!-- Racing Statistics -->
+		<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+			<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Racing Statistics</h2>
+			<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Race Starts</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.race_starts?.toLocaleString() || '0'}
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Wins</p>
+					<p class="text-2xl font-bold text-green-600 dark:text-green-400">
+						{driver.win_count?.toLocaleString() || '0'}
+					</p>
+					{#if driver.race_starts && driver.race_starts > 0 && driver.win_count}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							{((driver.win_count / driver.race_starts) * 100).toFixed(1)}% win rate
+						</p>
+					{/if}
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Podiums</p>
+					<p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+						{driver.podium_count?.toLocaleString() || '0'}
+					</p>
+					{#if driver.race_starts && driver.race_starts > 0 && driver.podium_count}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							{((driver.podium_count / driver.race_starts) * 100).toFixed(1)}% podium rate
+						</p>
+					{/if}
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Percentile Rank</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.percentile_rank !== null ? `${driver.percentile_rank}%` : 'N/A'}
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Activity Statistics -->
+		<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+			<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Activity Statistics</h2>
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Session Files</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.number_of_session_files?.toLocaleString() || '0'}
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Driving Time</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{#if driver.total_driving_time_minutes}
+							{Math.floor(driver.total_driving_time_minutes / 60)}h {driver.total_driving_time_minutes %
+								60}m
+						{:else}
+							0h 0m
+						{/if}
+					</p>
+					{#if driver.total_driving_time_minutes}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							{driver.total_driving_time_minutes.toLocaleString()} minutes
+						</p>
+					{/if}
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Collisions (Weighted)</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.total_collisions_weighted?.toLocaleString() || '0'}
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Contacts/Min</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.avg_contacts_per_minute?.toFixed(2) || '0.00'}
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Experience -->
+		<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+			<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Experience</h2>
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Cars Driven</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.cars_driven?.toLocaleString() || '0'}
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tracks Driven</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white">
+						{driver.tracks_driven?.toLocaleString() || '0'}
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Platform Information -->
+		{#if driver.ac || driver.pc2 || driver.steam_id64}
+			<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+					Platform Information
+				</h2>
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+					{#if driver.ac}
+						<div>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Assetto Corsa</p>
+							<p class="text-lg font-semibold text-gray-900 dark:text-white">{driver.ac}</p>
+						</div>
+					{/if}
+					{#if driver.pc2}
+						<div>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Project Cars 2</p>
+							<p class="text-lg font-semibold text-gray-900 dark:text-white">{driver.pc2}</p>
+						</div>
+					{/if}
+					{#if driver.steam_id64}
+						<div>
+							<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Steam ID64</p>
+							<p class="font-mono text-lg font-semibold text-gray-900 dark:text-white">
+								{driver.steam_id64}
+							</p>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Technical Information -->
+		<div class="border-t border-gray-200 pt-8 dark:border-gray-700">
 			<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Driver GUID</p>
 			<p class="mt-1 font-mono text-sm text-gray-600 dark:text-gray-400">
 				{driver.driver_guid || 'N/A'}

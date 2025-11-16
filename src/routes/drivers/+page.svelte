@@ -10,12 +10,12 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import type { Driver } from '$lib/drivers';
+	import type { DriverOverview } from '$lib/drivers';
 	import { getDriversOGData } from '$lib/og';
 
 	// Props from server
-	let { data } = $props<{ data: { drivers: Driver[] } }>();
-	let drivers: Driver[] = data?.drivers ?? [];
+	let { data } = $props<{ data: { drivers: DriverOverview[] } }>();
+	let drivers: DriverOverview[] = data?.drivers ?? [];
 	let isLoading = drivers.length === 0;
 
 	// Generate Open Graph data for drivers page
