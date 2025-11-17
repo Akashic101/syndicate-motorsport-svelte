@@ -28,7 +28,10 @@ export default defineConfig({
 						return 'flowbite-datatable';
 					}
 					// Split Flowbite Svelte components
-					if (id.includes('flowbite-svelte') && !id.includes('node_modules/flowbite-svelte-icons')) {
+					if (
+						id.includes('flowbite-svelte') &&
+						!id.includes('node_modules/flowbite-svelte-icons')
+					) {
 						return 'flowbite-svelte';
 					}
 					// Split Supabase client
@@ -38,11 +41,7 @@ export default defineConfig({
 					// Split large node_modules into vendor chunk
 					if (id.includes('node_modules')) {
 						// Keep small utilities together
-						if (
-							id.includes('svelte') ||
-							id.includes('@sveltejs') ||
-							id.includes('@inlang')
-						) {
+						if (id.includes('svelte') || id.includes('@sveltejs') || id.includes('@inlang')) {
 							return 'svelte-vendor';
 						}
 						// Everything else goes into vendor
