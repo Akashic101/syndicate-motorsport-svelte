@@ -71,6 +71,8 @@
 }
 
 @source "../node_modules/@flowbite-svelte-plugins/chart/dist";
+@source "../node_modules/simple-datatables/dist";
+@source "../node_modules/@flowbite-svelte-plugins/datatable/dist";
 
 .datatable-pagination .datatable-active a,
 .datatable-pagination .datatable-active a:focus,
@@ -84,6 +86,16 @@
 
 .datatable-wrapper .datatable-table tbody tr.selected {
 	background-color: #fff1ee !important;
+}
+
+/* Ensure datatable takes full width in production builds */
+.datatable-wrapper {
+	width: 100% !important;
+}
+
+.datatable-wrapper .datatable-table {
+	width: 100% !important;
+	min-width: 100% !important;
 }
 
 .buy-now {

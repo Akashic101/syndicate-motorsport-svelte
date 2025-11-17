@@ -195,33 +195,39 @@
 	<meta name="twitter:image" content={ogData['twitter:image']} />
 </svelte:head>
 
-<div class="m-8">
+<div class="m-8 w-full">
 	{#if isLoading}
-		<DefaultTable>
-			<TableHead>
-				{#each headers as header}
-					<TableHeadCell>{header}</TableHeadCell>
-				{/each}
-			</TableHead>
-			<TableBody>
-				{#each Array(8) as _}
-					<TableBodyRow>
-						{#each headers as _}
-							<TableBodyCell>
-								<div role="status" class="max-w-sm animate-pulse">
-									<div
-										class="mb-2.5 h-2 max-w-[360px] rounded-full bg-gray-200 dark:bg-gray-700"
-									></div>
-								</div>
-							</TableBodyCell>
-						{/each}
-					</TableBodyRow>
-				{/each}
-			</TableBody>
-		</DefaultTable>
+		<div class="w-full overflow-x-auto">
+			<DefaultTable class="w-full min-w-full">
+				<TableHead>
+					{#each headers as header}
+						<TableHeadCell>{header}</TableHeadCell>
+					{/each}
+				</TableHead>
+				<TableBody>
+					{#each Array(8) as _}
+						<TableBodyRow>
+							{#each headers as _}
+								<TableBodyCell>
+									<div role="status" class="max-w-sm animate-pulse">
+										<div
+											class="mb-2.5 h-2 max-w-[360px] rounded-full bg-gray-200 dark:bg-gray-700"
+										></div>
+									</div>
+								</TableBodyCell>
+							{/each}
+						</TableBodyRow>
+					{/each}
+				</TableBody>
+			</DefaultTable>
+		</div>
 	{:else if drivers.length === 0}
 		<p class="py-8 text-center text-gray-400">No driver data available.</p>
 	{:else}
-		<Table items={tableData} dataTableOptions={tableOptions} />
+		<div class="w-full overflow-x-auto">
+			<div class="w-full min-w-full">
+				<Table items={tableData} dataTableOptions={tableOptions} class="w-full" />
+			</div>
+		</div>
 	{/if}
 </div>

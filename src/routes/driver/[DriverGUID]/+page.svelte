@@ -279,7 +279,7 @@
 					{#if elo_changes && elo_changes.length > 0}
 						{@const first_race = new Date(elo_changes[0].date || '')}
 						<div class="text-sm text-gray-500 dark:text-gray-400">
-							First race: {first_race.toLocaleDateString('en-US', {
+							First race: {first_race.toLocaleDateString(undefined,{
 								month: 'long',
 								year: 'numeric'
 							})}
