@@ -4,12 +4,12 @@ import type { Driver, DriverOverview } from './types';
 // Re-export types for convenience
 export type { Driver, DriverOverview } from './types';
 
-// Get all drivers (from 'drivers' table - overview data)
+// Get all drivers (from 'driver_data' table - using same source as driver detail page)
 export async function getAllDrivers(): Promise<DriverOverview[]> {
 	try {
 		const { data, error } = await supabase
-			.from('drivers')
-			.select('*')
+			.from('driver_data')
+			.select('id, created_at, driver_guid, rank, driver, elo, license, safety_rating')
 			.order('rank', { ascending: true });
 
 		if (error) {
@@ -23,15 +23,13 @@ export async function getAllDrivers(): Promise<DriverOverview[]> {
 	}
 }
 
-// Get driver by GUID (searches by steam_id64 in driver_data table)
+// Get driver by GUID
 export async function getDriverByGUID(driverGUID: string): Promise<Driver | null> {
 	try {
-		// In driver_data table, use steam_id64 for lookup
-		// Try as string first
 		let { data, error } = await supabase
 			.from('driver_data')
 			.select('*')
-			.eq('steam_id64', driverGUID)
+			.eq('driver_guid', driverGUID)
 			.single();
 
 		// If string query fails, try as number
@@ -41,7 +39,7 @@ export async function getDriverByGUID(driverGUID: string): Promise<Driver | null
 				const result = await supabase
 					.from('driver_data')
 					.select('*')
-					.eq('steam_id64', numericGUID)
+					.eq('driver_guid', numericGUID)
 					.single();
 
 				data = result.data;
@@ -94,7 +92,7 @@ export async function getDriverByGUID(driverGUID: string): Promise<Driver | null
 	}
 }
 
-// Get drivers by list of GUIDs (from 'drivers' table - overview data)
+// Get drivers by list of GUIDs (from 'driver_data' table - using same source as driver detail page)
 export async function getDriversByGUIDs(
 	driverGUIDs: (string | null)[]
 ): Promise<Map<string, DriverOverview>> {
@@ -108,8 +106,8 @@ export async function getDriversByGUIDs(
 
 		// Query with 'in' filter - try as strings first
 		const { data, error } = await supabase
-			.from('drivers')
-			.select('*')
+			.from('driver_data')
+			.select('id, created_at, driver_guid, rank, driver, elo, license, safety_rating')
 			.in('driver_guid', validGUIDs);
 
 		if (error) {

@@ -70,8 +70,7 @@
 	font-display: swap;
 }
 
-@source "../node_modules/simple-datatables/dist";
-@source "../node_modules/@flowbite-svelte-plugins/datatable/dist";
+@source "../node_modules/@flowbite-svelte-plugins/chart/dist";
 
 .datatable-pagination .datatable-active a,
 .datatable-pagination .datatable-active a:focus,
