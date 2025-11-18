@@ -33,6 +33,7 @@
 		"@flowbite-svelte-plugins/datatable": "^0.4.1",
 		"@inlang/paraglide-js": "^2.3.2",
 		"@sveltejs/adapter-auto": "^6.1.0",
+		"@sveltejs/adapter-netlify": "^5.2.4",
 		"@sveltejs/adapter-node": "^5.4.0",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.43.2",
