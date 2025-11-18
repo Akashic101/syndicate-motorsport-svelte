@@ -31,6 +31,17 @@
 	// Generate Open Graph data for home page
 	const ogData = getHomeOGData(data.stats);
 
+	// Filter events to only show future events
+	const futureEvents = $derived.by(() => {
+		if (!data.events) return [];
+		const now = new Date();
+		return data.events.filter((event: { title: string; href: string; time: string }) => {
+			if (!event.time) return false;
+			const eventDate = new Date(event.time);
+			return eventDate > now;
+		});
+	});
+
 	// Function to format time in user's local timezone and locale
 	function formatEventTime(timestamptz: string): string {
 		try {
@@ -135,108 +146,112 @@
 </section>
 
 <section class="flex flex-col p-4 md:flex-row">
-	{#if data?.events?.length}
-		<Card class="m-3 max-w-full p-3 md:max-w-[50%]">
-			<div class="px-4 py-8">
-				<h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Events</h3>
-				<Table>
-					<TableHead>
-						<TableHeadCell>Event</TableHeadCell>
-						<TableHeadCell>Time</TableHeadCell>
-					</TableHead>
-					<TableBody>
-						{#each data.events as item}
-							<TableBodyRow>
-								<TableBodyCell>
-									<a
-										href={item.href}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="text-primary-600 hover:underline"
-									>
-										{item.title}
-									</a>
-								</TableBodyCell>
-
-								<TableBodyCell class="whitespace-nowrap">
-									{formatEventTime(item.time)}
-								</TableBodyCell>
-							</TableBodyRow>
-						{/each}
-					</TableBody>
-				</Table>
-			</div>
-		</Card>
-		<Card class="m-3 max-w-full p-3 md:max-w-[50%]">
-			<div class="px-4 py-8">
-				<h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-					Active Championships
-				</h3>
-				{#if data?.championships?.length}
-					<div class="space-y-3">
-						{#each data.championships as championship}
-							<div
-								class="flex items-center space-x-4 border-b border-gray-200 py-2 last:border-b-0"
-							>
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-xl text-gray-900 dark:text-white">
-										{championship.name || 'Unnamed Championship'}
-									</p>
-									{#if championship.description}
-										<p class="text-md line-clamp-3 text-gray-500 dark:text-gray-400">
-											{championship.description}
-										</p>
-									{/if}
-									{#if championship.season}
-										<p class="text-sm text-gray-400 dark:text-gray-500">
-											Season {championship.season} | {championship.round_count} Rounds
-											{#if championship.start_date || championship.end_date}
-												|
-												{new Date(championship.start_date).toLocaleDateString()} - {new Date(
-													championship.end_date
-												).toLocaleDateString()}
-											{/if}
-										</p>
-									{/if}
-								</div>
-								<div class="flex flex-col items-center gap-2 sm:gap-0 lg:flex-row">
-									<Button
-										size="sm"
-										href={`/events-and-leagues/${championship.championship_id}`}
-										class="m-2 text-black"
-									>
-										View Info
-									</Button>
-									{#if championship.sign_up_link}
-										<Button
-											size="sm"
-											href={championship.sign_up_link}
+	{#if futureEvents.length || data?.championships?.length}
+		{#if futureEvents.length}
+			<Card class="m-3 max-w-full p-3 md:max-w-[50%]">
+				<div class="px-4 py-8">
+					<h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Events</h3>
+					<Table>
+						<TableHead>
+							<TableHeadCell>Event</TableHeadCell>
+							<TableHeadCell>Time</TableHeadCell>
+						</TableHead>
+						<TableBody>
+							{#each futureEvents as item}
+								<TableBodyRow>
+									<TableBodyCell>
+										<a
+											href={item.href}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="m-2 text-black"
+											class="text-primary-600 hover:underline"
 										>
-											Sign Up
-										</Button>
-									{:else}
+											{item.title}
+										</a>
+									</TableBodyCell>
+
+									<TableBodyCell class="whitespace-nowrap">
+										{formatEventTime(item.time)}
+									</TableBodyCell>
+								</TableBodyRow>
+							{/each}
+						</TableBody>
+					</Table>
+				</div>
+			</Card>
+		{/if}
+		{#if data?.championships?.length}
+			<Card class="m-3 max-w-full p-3 md:max-w-[50%]">
+				<div class="px-4 py-8">
+					<h3 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+						Active Championships
+					</h3>
+					{#if data?.championships?.length}
+						<div class="space-y-3">
+							{#each data.championships as championship}
+								<div
+									class="flex items-center space-x-4 border-b border-gray-200 py-2 last:border-b-0"
+								>
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-xl text-gray-900 dark:text-white">
+											{championship.name || 'Unnamed Championship'}
+										</p>
+										{#if championship.description}
+											<p class="text-md line-clamp-3 text-gray-500 dark:text-gray-400">
+												{championship.description}
+											</p>
+										{/if}
+										{#if championship.season}
+											<p class="text-sm text-gray-400 dark:text-gray-500">
+												Season {championship.season} | {championship.round_count} Rounds
+												{#if championship.start_date || championship.end_date}
+													|
+													{new Date(championship.start_date).toLocaleDateString()} - {new Date(
+														championship.end_date
+													).toLocaleDateString()}
+												{/if}
+											</p>
+										{/if}
+									</div>
+									<div class="flex flex-col items-center gap-2 sm:gap-0 lg:flex-row">
 										<Button
-											class="m-2 text-black"
 											size="sm"
-											href="/events-and-leagues/{championship.championship_id}"
+											href={`/events-and-leagues/${championship.championship_id}`}
+											class="m-2 text-black"
 										>
-											View
+											View Info
 										</Button>
-									{/if}
+										{#if championship.sign_up_link}
+											<Button
+												size="sm"
+												href={championship.sign_up_link}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="m-2 text-black"
+											>
+												Sign Up
+											</Button>
+										{:else}
+											<Button
+												class="m-2 text-black"
+												size="sm"
+												href="/events-and-leagues/{championship.championship_id}"
+											>
+												View
+											</Button>
+										{/if}
+									</div>
 								</div>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="py-4 text-center text-gray-500 dark:text-gray-400">
-						No active championships at the moment
-					</p>
-				{/if}
-			</div>
-		</Card>
+							{/each}
+						</div>
+					{:else}
+						<p class="py-4 text-center text-gray-500 dark:text-gray-400">
+							No active championships at the moment
+						</p>
+					{/if}
+				</div>
+			</Card>
+		{/if}
 	{/if}
 </section>
 
