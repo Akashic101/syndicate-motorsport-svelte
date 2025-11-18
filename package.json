@@ -1,0 +1,76 @@
+{
+	"name": "syndicate-motorsport-svelte",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"devEngines": {
+		"runtime": {
+			"name": "bun",
+			"version": "^1.2.0",
+			"onFail": "download"
+		},
+		"packageManager": {
+			"name": "bun",
+			"version": "^1.2.0",
+			"onFail": "download"
+		}
+	},
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"format": "prettier --write .",
+		"lint": "prettier --check . && eslint .",
+		"knip": "knip"
+	},
+	"devDependencies": {
+		"@eslint/compat": "^1.4.0",
+		"@eslint/js": "^9.36.0",
+		"@flowbite-svelte-plugins/chart": "^0.2.4",
+		"@flowbite-svelte-plugins/datatable": "^0.4.1",
+		"@inlang/paraglide-js": "^2.3.2",
+		"@sveltejs/adapter-auto": "^6.1.0",
+		"@sveltejs/adapter-netlify": "^5.2.4",
+		"@sveltejs/adapter-node": "^5.4.0",
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.43.2",
+		"@sveltejs/vite-plugin-svelte": "^6.2.0",
+		"@tailwindcss/forms": "^0.5.10",
+		"@tailwindcss/typography": "^0.5.18",
+		"@tailwindcss/vite": "^4.1.13",
+		"@types/node": "^20.19.21",
+		"eslint": "^9.36.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.12.4",
+		"flowbite": "^3.1.2",
+		"flowbite-svelte": "^1.17.4",
+		"flowbite-svelte-icons": "^3.0.0",
+		"globals": "^16.4.0",
+		"knip": "^5.65.0",
+		"prettier": "^3.6.2",
+		"prettier-plugin-svelte": "^3.4.0",
+		"prettier-plugin-tailwindcss": "^0.6.14",
+		"svelte": "^5.39.5",
+		"svelte-adapter-bun": "^1.0.0",
+		"svelte-check": "^4.3.2",
+		"svelte-flags": "^2.0.2",
+		"tailwindcss": "^4.1.13",
+		"tsx": "^4.19.2",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.44.1",
+		"vite": "^7.1.7"
+	},
+	"dependencies": {
+		"@supabase/supabase-js": "^2.75.1",
+		"axios": "^1.12.2",
+		"cheerio": "^1.1.2",
+		"csvtojson": "^2.0.10",
+		"flowbite-svelte-blocks": "^2.1.0",
+		"node-cron": "^4.2.1",
+		"sqlite3": "^5.1.7",
+		"sveltekit-adapter-iis": "^1.5.0"
+	}
+}
