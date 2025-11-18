@@ -32,10 +32,8 @@
 		"@flowbite-svelte-plugins/chart": "^0.2.4",
 		"@flowbite-svelte-plugins/datatable": "^0.4.1",
 		"@inlang/paraglide-js": "^2.3.2",
-		"@sveltejs/adapter-auto": "^6.1.0",
 		"@sveltejs/adapter-netlify": "^5.2.4",
 		"@sveltejs/adapter-node": "^5.4.0",
-		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.43.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.0",
 		"@tailwindcss/forms": "^0.5.10",
@@ -54,9 +52,7 @@
 		"prettier-plugin-svelte": "^3.4.0",
 		"prettier-plugin-tailwindcss": "^0.6.14",
 		"svelte": "^5.39.5",
-		"svelte-adapter-bun": "^1.0.0",
 		"svelte-check": "^4.3.2",
-		"svelte-flags": "^2.0.2",
 		"tailwindcss": "^4.1.13",
 		"tsx": "^4.19.2",
 		"typescript": "^5.9.3",
@@ -65,12 +61,6 @@
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.75.1",
-		"axios": "^1.12.2",
-		"cheerio": "^1.1.2",
-		"csvtojson": "^2.0.10",
-		"flowbite-svelte-blocks": "^2.1.0",
-		"node-cron": "^4.2.1",
-		"sqlite3": "^5.1.7",
-		"sveltekit-adapter-iis": "^1.5.0"
+		"flowbite-svelte-blocks": "^2.1.0"
 	}
 }
