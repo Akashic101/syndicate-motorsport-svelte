@@ -36,6 +36,16 @@
 	let driver = $derived(data.driver);
 	let steamAvatar = $derived(data.steamAvatar);
 	let elo_changes = $derived(data.elo_changes);
+	// Sort ELO changes by date descending (most recent first) for table display
+	let sorted_elo_changes = $derived.by(() => {
+		if (!elo_changes) return [];
+		// Sort by date descending (most recent first)
+		return [...elo_changes].sort((a, b) => {
+			const dateA = a.date ? new Date(a.date).getTime() : 0;
+			const dateB = b.date ? new Date(b.date).getTime() : 0;
+			return dateB - dateA; // Descending order
+		});
+	});
 	let trackAliasMap = $derived(data.trackAliasMap);
 
 	// Calculate cumulative ELO for chart
@@ -482,7 +492,7 @@
 							<TableHeadCell class="text-right">ELO Change</TableHeadCell>
 						</TableHead>
 						<TableBody>
-							{#each elo_changes as change}
+							{#each sorted_elo_changes as change}
 								<TableBodyRow class="bg-white dark:border-gray-700 dark:bg-gray-800">
 									<TableBodyCell
 										class="font-medium whitespace-nowrap text-gray-900 dark:text-white"
