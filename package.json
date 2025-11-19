@@ -60,6 +60,7 @@
 		"vite": "^7.1.7"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.934.0",
 		"@supabase/supabase-js": "^2.75.1",
 		"flowbite-svelte-blocks": "^2.1.0"
 	}
