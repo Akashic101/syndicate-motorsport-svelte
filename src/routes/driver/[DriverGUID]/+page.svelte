@@ -3,17 +3,28 @@
 	import { getDriverOGData } from '$lib/og';
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
-	import {
-		Card,
-		Table,
-		TableHead,
-		TableHeadCell,
-		TableBody,
-		TableBodyRow,
-		TableBodyCell,
-		Avatar
-	} from 'flowbite-svelte';
+
+	import { Table } from '@flowbite-svelte-plugins/datatable';
+	import type { DataTable } from '@flowbite-svelte-plugins/datatable';
+	import type { DataTableOptions } from 'simple-datatables';
+	import { Card, Spinner } from 'flowbite-svelte';
 	import { getFixedTrackName } from '$lib/trackAliases';
+
+	interface CellNode {
+		nodeName: string;
+		attributes?: Record<string, string | number>;
+		childNodes?: (CellNode | TextNode)[];
+	}
+
+	interface TextNode {
+		nodeName: '#text';
+		data: string;
+	}
+
+	interface TableCell {
+		childNodes: (CellNode | TextNode)[];
+		data: any;
+	}
 
 	type EloChange = {
 		id: number;
@@ -48,10 +59,10 @@
 	});
 	let trackAliasMap = $derived(data.trackAliasMap);
 
-	// Calculate cumulative ELO for chart
+	// Calculate cumulative ELO for chart (starting at 1500)
 	let cumulative_elo = $derived.by(() => {
 		if (!elo_changes || elo_changes.length === 0) return [];
-		let cumulative = 0;
+		let cumulative = 1500; // Start at 1500
 		return elo_changes.map((change: EloChange) => {
 			cumulative += change.elo_change || 0;
 			return cumulative;
@@ -65,6 +76,19 @@
 			const date = new Date(change.date);
 			return date.toLocaleDateString();
 		});
+
+		// Calculate symmetric range around 1500 for y-axis
+		let y_min = 1500;
+		let y_max = 1500;
+		if (cumulative_elo.length > 0) {
+			const data_min = Math.min(...cumulative_elo);
+			const data_max = Math.max(...cumulative_elo);
+			const max_deviation = Math.max(Math.abs(data_min - 1500), Math.abs(data_max - 1500));
+			// Add 10% padding and round to nearest 50
+			const padding = Math.ceil((max_deviation * 1.1) / 50) * 50;
+			y_min = 1500 - padding;
+			y_max = 1500 + padding;
+		}
 
 		return {
 			chart: {
@@ -103,38 +127,30 @@
 			},
 			series: [
 				{
-					name: 'Cumulative ELO Change',
+					name: 'ELO Rating',
 					data: cumulative_elo,
-					color: '#1A56DB'
+					color: 'var(--color-primary-500)'
 				}
 			],
 			xaxis: {
-				categories: dates,
 				labels: {
-					show: true,
-					rotate: -45,
-					rotateAlways: false,
-					style: {
-						fontFamily: 'Inter, sans-serif',
-						cssClass: 'text-xs font-normal fill-gray-500 dark:fill-gray-400'
-					}
-				},
-				axisBorder: {
-					show: false
-				},
-				axisTicks: {
 					show: false
 				}
 			},
 			yaxis: {
+				min: y_min,
+				max: y_max,
 				title: {
-					text: 'Cumulative ELO Change',
+					text: 'ELO Rating',
 					style: {
 						fontFamily: 'Inter, sans-serif',
 						cssClass: 'text-xs font-normal text-red-100 dark:text-red-100'
 					}
 				},
 				labels: {
+					formatter: function (val: number) {
+						return Math.round(val).toString();
+					},
 					style: {
 						fontFamily: 'Inter, sans-serif',
 						cssClass: 'text-xs font-normal fill-gray-100 dark:fill-gray-100'
@@ -159,6 +175,77 @@
 	function format_elo_change(change: number | null): string {
 		if (change === null || change === undefined) return 'N/A';
 		return change >= 0 ? `+${change}` : `${change}`;
+	}
+
+	// Transform ELO changes data for DataTable
+	let table_data = $derived.by(() => {
+		if (!sorted_elo_changes || sorted_elo_changes.length === 0) return [];
+		return sorted_elo_changes.map((change: EloChange) => ({
+			Date: format_date(change.date),
+			Track: getFixedTrackName(change.track, trackAliasMap) || 'N/A',
+			Platform: change.platform || 'N/A',
+			'ELO Change': format_elo_change(change.elo_change)
+		}));
+	});
+
+	// Render function for ELO Change column
+	const renderEloChange = function (
+		data: any,
+		cell: TableCell,
+		_dataIndex: number,
+		_cellIndex: number
+	): void {
+		const data_str = String(data || '');
+		const change = parseFloat(data_str.replace('+', '')) || 0;
+		const color_class =
+			change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+
+		cell.childNodes = [
+			{
+				nodeName: 'SPAN',
+				attributes: {
+					class: `font-semibold ${color_class}`
+				},
+				childNodes: [
+					{
+						nodeName: '#text',
+						data: data_str
+					}
+				]
+			}
+		];
+	};
+
+	// Configure DataTable options
+	let data_table_options = $derived.by(
+		(): DataTableOptions => ({
+			searchable: false,
+			perPage: 10,
+			perPageSelect: [10, 25, 50, 100],
+			columns: [
+				{
+					select: 3,
+					render: renderEloChange,
+					type: 'string'
+				}
+			]
+		})
+	);
+
+	// Table loading state
+	let isTableLoading = $state(true);
+	let tableInstance: DataTable | null = $state(null);
+
+	function handleInitStart(): void {
+		isTableLoading = true;
+	}
+
+	function handleInitComplete(dataTable: DataTable): void {
+		isTableLoading = false;
+	}
+
+	function handleInitError(error: Error): void {
+		isTableLoading = false;
 	}
 
 	// Prepare radial chart options for race statistics
@@ -221,20 +308,6 @@
 	// Generate Open Graph data for driver page
 	const ogData = $derived(getDriverOGData(driver));
 
-	function getBadgeStyle(license: string): string {
-		switch (license.toLowerCase()) {
-			case 'gold':
-				return 'color:#f59e0b;background-color:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);';
-			case 'silver':
-				return 'color:#e5e7eb;background-color:rgba(229,231,235,0.12);border-color:rgba(229,231,235,0.35);';
-			case 'bronze':
-				return 'color:#cd7f32;background-color:rgba(205,127,50,0.15);border-color:rgba(205,127,50,0.45);';
-			case 'rookie':
-			default:
-				return 'color:#22c55e;background-color:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);';
-		}
-	}
-
 	function getSafetyBadgeStyle(rating: string): string {
 		switch (rating.toUpperCase()) {
 			case 'S':
@@ -281,82 +354,55 @@
 	</a>
 
 	<div class="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
-		<div class="mb-6 flex items-center gap-4">
-			<div class="flex items-center space-x-4 rtl:space-x-reverse">
-				<Avatar src={steamAvatar} alt={driver.driver || 'Driver'} size="lg" cornerStyle="rounded" />
-				<div class="text-2xl font-bold text-gray-600 dark:text-gray-300">
-					<div>{(driver.driver || '?').toUpperCase()}</div>
-					{#if elo_changes && elo_changes.length > 0}
-						{@const first_race = new Date(elo_changes[0].date || '')}
-						<div class="text-sm text-gray-500 dark:text-gray-400">
-							First race: {first_race.toLocaleDateString(undefined, {
-								month: 'long',
-								year: 'numeric'
-							})}
+		<div class="mb-6">
+			<Card img={steamAvatar || ''} horizontal size="md" class="w-full max-w-none">
+				<div class="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
+					<!-- Driver Info Section -->
+					<div>
+						<h5 class="mb-8 text-4xl font-bold text-gray-900 dark:text-white">
+							{driver.driver}
+						</h5>
+						<div class="flex flex-wrap gap-4">
+							<div>
+								<p class="text-lg font-semibold text-gray-700 dark:text-gray-300">
+									Rank #{driver.rank || 'N/A'}
+								</p>
+								{#if driver.percentile_rank !== null}
+									<p class="text-xs text-gray-500 dark:text-gray-400">
+										Top {100 - (driver.percentile_rank || 0)}%
+									</p>
+								{/if}
+							</div>
+							<div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+							<div>
+								<p class="text-sm font-medium text-gray-500 dark:text-gray-400">ELO Rating</p>
+								<p class="text-xl font-bold text-gray-900 dark:text-white">{driver.elo || 'N/A'}</p>
+								{#if driver.range_min !== null && driver.range_max !== null}
+									<p class="text-xs text-gray-500 dark:text-gray-400">
+										Range: {driver.range_min} - {driver.range_max}
+									</p>
+								{/if}
+							</div>
 						</div>
-					{/if}
-				</div>
-			</div>
-		</div>
+					</div>
 
-		<!-- Basic Stats -->
-		<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-			<div class="space-y-4">
-				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Rank</p>
-					<p class="text-2xl font-bold text-gray-900 dark:text-white">#{driver.rank || 'N/A'}</p>
-					{#if driver.percentile_rank !== null}
-						<p class="text-xs text-gray-500 dark:text-gray-400">
-							Top {100 - (driver.percentile_rank || 0)}%
-						</p>
-					{/if}
-				</div>
+					<!-- Badges Section -->
+					<div class="grid grid-cols-1 justify-items-end gap-4">
+						<div class="flex gap-2">
+							<img src={driver.icon_url} alt={driver.license || 'License'} class="h-18 w-auto" />
+						</div>
 
-				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">ELO Rating</p>
-					<p class="text-2xl font-bold text-gray-900 dark:text-white">{driver.elo || 'N/A'}</p>
-					{#if driver.range_min !== null && driver.range_max !== null}
-						<p class="text-xs text-gray-500 dark:text-gray-400">
-							Range: {driver.range_min} - {driver.range_max}
-						</p>
-					{/if}
-				</div>
-			</div>
-
-			<div class="space-y-4">
-				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">License</p>
-					<div class="mt-2">
-						{#if driver.icon_url}
-							<img src={driver.icon_url} alt={driver.license || 'License'} class="h-12 w-auto" />
-						{:else}
+						<div>
 							<span
-								style={getBadgeStyle(driver.license || '')}
-								class="inline-block rounded-md border px-4 py-2 text-lg font-semibold"
+								style={getSafetyBadgeStyle(driver.safety_rating || '')}
+								class="inline-block rounded-md border px-4 py-2 text-5xl font-semibold"
 							>
-								{driver.license || 'N/A'}
+								{driver.safety_rating || 'N/A'}
 							</span>
-						{/if}
-						{#if driver.next_license}
-							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Next: {driver.next_license}
-							</p>
-						{/if}
+						</div>
 					</div>
 				</div>
-
-				<div>
-					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Safety Rating</p>
-					<div class="mt-2">
-						<span
-							style={getSafetyBadgeStyle(driver.safety_rating || '')}
-							class="inline-block rounded-md border px-4 py-2 text-lg font-semibold"
-						>
-							{driver.safety_rating || 'N/A'}
-						</span>
-					</div>
-				</div>
-			</div>
+			</Card>
 		</div>
 
 		<!-- Racing Statistics -->
@@ -481,49 +527,23 @@
 
 		<!-- ELO Changes Table -->
 		{#if elo_changes && elo_changes.length > 0}
-			<div class="w-200px mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+			<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
 				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">All ELO Changes</h2>
 				<div class="overflow-x-auto">
-					<Table hoverable={true} class="w-full">
-						<TableHead>
-							<TableHeadCell>Date</TableHeadCell>
-							<TableHeadCell>Track</TableHeadCell>
-							<TableHeadCell>Platform</TableHeadCell>
-							<TableHeadCell class="text-right">ELO Change</TableHeadCell>
-						</TableHead>
-						<TableBody>
-							{#each sorted_elo_changes as change}
-								<TableBodyRow class="bg-white dark:border-gray-700 dark:bg-gray-800">
-									<TableBodyCell
-										class="font-medium whitespace-nowrap text-gray-900 dark:text-white"
-									>
-										{format_date(change.date)}
-									</TableBodyCell>
-									<TableBodyCell>
-										{getFixedTrackName(change.track, trackAliasMap) || 'N/A'}
-									</TableBodyCell>
-									<TableBodyCell>{change.platform || 'N/A'}</TableBodyCell>
-									<TableBodyCell
-										class="text-right font-semibold {change.elo_change && change.elo_change >= 0
-											? 'text-green-600 dark:text-green-400'
-											: 'text-red-600 dark:text-red-400'}"
-									>
-										{format_elo_change(change.elo_change)}
-									</TableBodyCell>
-								</TableBodyRow>
-							{/each}
-						</TableBody>
-					</Table>
+					{#if isTableLoading}
+						<Spinner />
+					{/if}
+					<Table
+						items={table_data}
+						dataTableOptions={data_table_options}
+						bind:isLoading={isTableLoading}
+						bind:dataTableInstance={tableInstance}
+						onInitStart={handleInitStart}
+						onInitComplete={handleInitComplete}
+						onInitError={handleInitError}
+					/>
 				</div>
 			</div>
 		{/if}
-
-		<!-- Technical Information -->
-		<div class="border-t border-gray-200 pt-8 dark:border-gray-700">
-			<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Driver GUID</p>
-			<p class="mt-1 font-mono text-sm text-gray-600 dark:text-gray-400">
-				{driver.driver_guid || 'N/A'}
-			</p>
-		</div>
 	</div>
 </div>
