@@ -55,6 +55,7 @@ export interface Driver {
 	ac: string | null;
 	pc2: string | null;
 	icon_url: string | null;
+	start_elo: number | null;
 }
 
 export interface RaceSession {

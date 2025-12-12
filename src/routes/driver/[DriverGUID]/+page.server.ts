@@ -71,6 +71,26 @@ export const load: PageServerLoad = async ({ params }) => {
 			throw error(404, 'Driver not found');
 		}
 
+		// Fetch start_elo from drivers table if not present in driver_data
+		let start_elo = driver.start_elo;
+		if (start_elo === null || start_elo === undefined) {
+			const { data: driverData, error: driverError } = await supabase
+				.from('drivers')
+				.select('start_elo')
+				.eq('driver_guid', driverGUID)
+				.single();
+
+			if (!driverError && driverData) {
+				start_elo = driverData.start_elo;
+			}
+		}
+
+		// Merge start_elo into driver object
+		const driverWithStartElo = {
+			...driver,
+			start_elo: start_elo ?? 1500
+		};
+
 		// Get Steam avatar if driver_guid is a Steam ID64
 		const steamAvatar = await getSteamAvatar(driver.driver_guid);
 
@@ -90,7 +110,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		const trackAliasMap = createTrackAliasObject(trackAliases);
 
 		return {
-			driver,
+			driver: driverWithStartElo,
 			steamAvatar,
 			elo_changes: elo_changes || [],
 			trackAliasMap

@@ -3,6 +3,8 @@
 	import { getDriverOGData } from '$lib/og';
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	import { Table } from '@flowbite-svelte-plugins/datatable';
 	import type { DataTable } from '@flowbite-svelte-plugins/datatable';
@@ -59,10 +61,11 @@
 	});
 	let trackAliasMap = $derived(data.trackAliasMap);
 
-	// Calculate cumulative ELO for chart (starting at 1500)
+	// Calculate cumulative ELO for chart (starting at start_elo)
 	let cumulative_elo = $derived.by(() => {
 		if (!elo_changes || elo_changes.length === 0) return [];
-		let cumulative = 1500; // Start at 1500
+		const start_elo_value = driver.start_elo_value;
+		let cumulative = start_elo_value;
 		return elo_changes.map((change: EloChange) => {
 			cumulative += change.elo_change || 0;
 			return cumulative;
@@ -71,24 +74,11 @@
 
 	// Prepare chart data
 	let chart_options = $derived.by((): ApexOptions => {
-		const dates = elo_changes.map((change: EloChange) => {
-			if (!change.date) return '';
-			const date = new Date(change.date);
-			return date.toLocaleDateString();
-		});
-
-		// Calculate symmetric range around 1500 for y-axis
-		let y_min = 1500;
-		let y_max = 1500;
-		if (cumulative_elo.length > 0) {
-			const data_min = Math.min(...cumulative_elo);
-			const data_max = Math.max(...cumulative_elo);
-			const max_deviation = Math.max(Math.abs(data_min - 1500), Math.abs(data_max - 1500));
-			// Add 10% padding and round to nearest 50
-			const padding = Math.ceil((max_deviation * 1.1) / 50) * 50;
-			y_min = 1500 - padding;
-			y_max = 1500 + padding;
-		}
+		// Calculate symmetric range around start_elo for y-axis
+		const start_elo_value = driver.start_elo || 1500;
+		const range = 500; // 500 points above and below
+		let y_min = start_elo_value - range;
+		let y_max = start_elo_value + range;
 
 		return {
 			chart: {
@@ -235,6 +225,11 @@
 	// Table loading state
 	let isTableLoading = $state(true);
 	let tableInstance: DataTable | null = $state(null);
+	let isClient = $state(false);
+
+	onMount(() => {
+		isClient = true;
+	});
 
 	function handleInitStart(): void {
 		isTableLoading = true;
@@ -410,7 +405,7 @@
 			<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Racing Statistics</h2>
 			<div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
 				<!-- Radial Chart -->
-				{#if driver.race_starts && driver.race_starts > 0}
+				{#if driver.race_starts && driver.race_starts > 0 && isClient}
 					<div class="flex flex-col items-center justify-center">
 						<Chart options={radial_chart_options} />
 					</div>
@@ -516,7 +511,7 @@
 		</div>
 
 		<!-- ELO Changes Chart -->
-		{#if elo_changes && elo_changes.length > 0}
+		{#if elo_changes && elo_changes.length > 0 && isClient}
 			<div class="mb-8 w-full border-t border-gray-200 pt-8 dark:border-gray-700">
 				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
 					ELO Rating Changes Over Time
@@ -526,7 +521,7 @@
 		{/if}
 
 		<!-- ELO Changes Table -->
-		{#if elo_changes && elo_changes.length > 0}
+		{#if elo_changes && elo_changes.length > 0 && isClient}
 			<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
 				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">All ELO Changes</h2>
 				<div class="overflow-x-auto">
