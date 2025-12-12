@@ -10,127 +10,142 @@ import type { RaceSession, RaceCar, RaceLap } from '$lib/types';
 import { getDriversByGUIDs } from '$lib/drivers';
 import { getAllTrackAliases, createTrackAliasObject } from '$lib/trackAliases';
 import { getAllCarAliases, createCarAliasObject } from '$lib/carAliases';
+import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params }) => {
 	try {
 		const leagueId = params.leagueId;
 
+		if (!leagueId) {
+			throw error(400, 'League ID is required');
+		}
+
 		// Get championship info from database using championship_id (UUID)
 		const championshipData = await getChampionshipByChampionshipId(leagueId);
 
 		if (!championshipData) {
-			throw new Error(`Championship not found for ID: ${leagueId}`);
+			throw error(404, `Championship not found for ID: ${leagueId}`);
 		}
-
-		if (!championshipData.server) {
-			throw new Error(
-				`Server ID not configured for championship: ${championshipData.name || leagueId}`
-			);
-		}
-
-		// Get server configuration from database using server ID
-		const serverId = championshipData.server;
-
-		if (!serverId) {
-			throw new Error(`Server ID not found for championship: ${championshipData.name || leagueId}`);
-		}
-
-		const serverData = await getServerById(serverId);
-
-		if (!serverData || !serverData.cookie || !serverData.url) {
-			throw new Error(
-				`Server configuration not found or cookies/URL not configured for server ID: ${serverId}`
-			);
-		}
-
-		// API endpoint for championship standings using championship_id from URL
-		// Remove trailing slash from server URL to avoid double slashes
-		const baseUrl = serverData.url.endsWith('/') ? serverData.url.slice(0, -1) : serverData.url;
-		const apiUrl = `${baseUrl}/championship/${leagueId}/standings.json`;
-
-		// Use cookies from database
-		const cookies = serverData.cookie;
-
-		const response = await fetch(apiUrl, {
-			headers: {
-				Cookie: cookies,
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-			}
-		});
-
-		if (!response.ok) {
-			throw new Error(
-				`Failed to fetch championship data: ${response.status} ${response.statusText}`
-			);
-		}
-
-		const apiData = await response.json();
-
-		// Process driver standings data - handle multiple data structures
-		let driverStandings = [];
-		if (apiData.DriverStandings) {
-			// Try different possible keys for driver standings
-			const possibleKeys = [
-				'',
-				'All',
-				'Super GT Vs DTM',
-				'Rookies',
-				'GT500',
-				'60s WSC 2L',
-				'TCL 70s',
-				'1923 GP',
-				'WSC 1967 5L+'
-			];
-			for (const key of possibleKeys) {
-				if (apiData.DriverStandings[key]) {
-					driverStandings = apiData.DriverStandings[key];
-					break;
-				}
-			}
-		}
-
-		const drivers = driverStandings.map((driver: any, index: number) => ({
-			position: index + 1,
-			name: driver.Car.Driver.Name,
-			team: driver.Car.Driver.Team || '',
-			nation: driver.Car.Driver.Nation || '',
-			car: driver.Car.Model,
-			points: driver.Points,
-			ballast: driver.Car.BallastKG,
-			restrictor: driver.Car.Restrictor
-		}));
-
-		// Process team standings data - handle multiple data structures
-		let teamStandings = [];
-		if (apiData.TeamStandings) {
-			// Try different possible keys for team standings
-			const possibleKeys = [
-				'',
-				'All',
-				'Super GT Vs DTM',
-				'Rookies',
-				'GT500',
-				'60s WSC 2L',
-				'TCL 70s',
-				'1923 GP',
-				'WSC 1967 5L+'
-			];
-			for (const key of possibleKeys) {
-				if (apiData.TeamStandings[key]) {
-					teamStandings = apiData.TeamStandings[key];
-					break;
-				}
-			}
-		}
-
-		const teams = teamStandings.map((team: any, index: number) => ({
-			position: index + 1,
-			name: team.Team,
-			points: team.Points
-		}));
 
 		// Use championship data from database
 		const championship = championshipData;
+
+		// Try to fetch standings from external API (optional - page will work without it)
+		let drivers: any[] = [];
+		let teams: any[] = [];
+
+		// Only try to fetch from API if server configuration exists
+		if (championshipData.server) {
+			const serverId = championshipData.server;
+			const serverData = await getServerById(serverId);
+
+			if (serverData && serverData.cookie && serverData.url) {
+				try {
+					// API endpoint for championship standings using championship_id from URL
+					// Remove trailing slash from server URL to avoid double slashes
+					const baseUrl = serverData.url.endsWith('/')
+						? serverData.url.slice(0, -1)
+						: serverData.url;
+					const apiUrl = `${baseUrl}/championship/${leagueId}/standings.json`;
+
+					// Use cookies from database
+					const baseCookies = serverData.cookie;
+
+					const response = await fetch(apiUrl, {
+						headers: {
+							Cookie: baseCookies,
+							'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+							Accept: 'application/json, text/json, */*'
+						},
+						redirect: 'follow'
+					});
+
+					if (response.ok) {
+						// Read response as text first to check if it's HTML (404 page) or JSON
+						const responseText = await response.text();
+
+						// Check if response is HTML (likely a 404 page or error page)
+						const isHtml =
+							responseText.trim().startsWith('<!DOCTYPE') ||
+							responseText.trim().startsWith('<html');
+
+						if (!isHtml) {
+							// Try to parse as JSON
+							try {
+								const apiData = JSON.parse(responseText);
+
+								// Process driver standings data - handle multiple data structures
+								let driverStandings = [];
+								if (apiData.DriverStandings) {
+									// Try different possible keys for driver standings
+									const possibleKeys = [
+										'',
+										'All',
+										'Super GT Vs DTM',
+										'Rookies',
+										'GT500',
+										'60s WSC 2L',
+										'TCL 70s',
+										'1923 GP',
+										'WSC 1967 5L+'
+									];
+									for (const key of possibleKeys) {
+										if (apiData.DriverStandings[key]) {
+											driverStandings = apiData.DriverStandings[key];
+											break;
+										}
+									}
+								}
+
+								drivers = driverStandings.map((driver: any, index: number) => ({
+									position: index + 1,
+									name: driver.Car.Driver.Name,
+									team: driver.Car.Driver.Team || '',
+									nation: driver.Car.Driver.Nation || '',
+									car: driver.Car.Model,
+									points: driver.Points,
+									ballast: driver.Car.BallastKG,
+									restrictor: driver.Car.Restrictor
+								}));
+
+								// Process team standings data - handle multiple data structures
+								let teamStandings = [];
+								if (apiData.TeamStandings) {
+									// Try different possible keys for team standings
+									const possibleKeys = [
+										'',
+										'All',
+										'Super GT Vs DTM',
+										'Rookies',
+										'GT500',
+										'60s WSC 2L',
+										'TCL 70s',
+										'1923 GP',
+										'WSC 1967 5L+'
+									];
+									for (const key of possibleKeys) {
+										if (apiData.TeamStandings[key]) {
+											teamStandings = apiData.TeamStandings[key];
+											break;
+										}
+									}
+								}
+
+								teams = teamStandings.map((team: any, index: number) => ({
+									position: index + 1,
+									name: team.Team,
+									points: team.Points
+								}));
+							} catch (jsonError) {
+								// Continue without standings data
+							}
+						}
+					}
+				} catch (apiError) {
+					// Continue without standings data - page will still work
+				}
+			}
+		}
 
 		// Fetch races for this championship
 		const races = await getRaceSessionsByChampionshipId(leagueId);
@@ -235,7 +250,6 @@ export const load: PageServerLoad = async ({ params }) => {
 						podium
 					};
 				} catch (error) {
-					console.error(`Error calculating podium for race ${race.id}:`, error);
 					return { race, podium: [] as PodiumDriver[] };
 				}
 			})
@@ -264,8 +278,11 @@ export const load: PageServerLoad = async ({ params }) => {
 			trackAliasMap,
 			carAliasMap
 		};
-	} catch (error) {
-		console.error('Error loading league data:', error);
-		throw error;
+	} catch (err) {
+		// Re-throw SvelteKit errors (404, 500, etc.) as-is
+		if (err && typeof err === 'object' && 'status' in err) {
+			throw err;
+		}
+		throw error(500, 'Failed to load league data');
 	}
 };
