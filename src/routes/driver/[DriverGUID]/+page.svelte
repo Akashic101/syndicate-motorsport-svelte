@@ -47,7 +47,7 @@
 		category: string | null;
 		threshold: number | null;
 		icon_url: string | null;
-		unlocked_at: string;
+		unlocked_at: string | null;
 	};
 
 	let { data } = $props<{
@@ -57,12 +57,26 @@
 			elo_changes: EloChange[];
 			trackAliasMap: Record<string, string>;
 			achievements: Achievement[];
+			totalAchievementsCount: number;
 		};
 	}>();
 	let driver = $derived(data.driver);
 	let steamAvatar = $derived(data.steamAvatar);
 	let elo_changes = $derived(data.elo_changes);
 	let achievements = $derived(data.achievements || []);
+	let totalAchievementsCount = $derived(data.totalAchievementsCount || 0);
+	// Get last 4 achievements (sorted by unlocked_at descending, most recent first)
+	let recent_achievements = $derived.by(() => {
+		if (!achievements || achievements.length === 0) return [];
+		// Sort by unlocked_at descending (most recent first)
+		const sorted = [...achievements].sort((a, b) => {
+			const dateA = a.unlocked_at ? new Date(a.unlocked_at).getTime() : 0;
+			const dateB = b.unlocked_at ? new Date(b.unlocked_at).getTime() : 0;
+			return dateB - dateA; // Descending order
+		});
+		// Return only the first 4
+		return sorted.slice(0, 4);
+	});
 	// Sort ELO changes by date descending (most recent first) for table display
 	let sorted_elo_changes = $derived.by(() => {
 		if (!elo_changes) return [];
@@ -536,9 +550,25 @@
 		<!-- Achievements -->
 		{#if achievements && achievements.length > 0}
 			<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
-				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Achievements</h2>
+				<div class="mb-4 flex items-center justify-between">
+					<div>
+						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Achievements</h2>
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							{achievements.length} / {totalAchievementsCount} achievement{totalAchievementsCount !==
+							1
+								? 's'
+								: ''} unlocked
+						</p>
+					</div>
+					<a
+						href="/driver/{driver.driver_guid}/achievements"
+						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+					>
+						Show All
+					</a>
+				</div>
 				<div class="grid grid-cols-4 gap-4">
-					{#each achievements as achievement}
+					{#each recent_achievements as achievement}
 						{@const iconUrl = getAchievementIconUrl(achievement)}
 						<div class="flex flex-col items-center justify-center gap-2">
 							{#if iconUrl}

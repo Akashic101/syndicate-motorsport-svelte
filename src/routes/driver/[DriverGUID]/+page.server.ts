@@ -109,6 +109,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		const trackAliases = await getAllTrackAliases();
 		const trackAliasMap = createTrackAliasObject(trackAliases);
 
+		// Get total count of all achievements
+		const { count: totalAchievementsCount, error: totalCountError } = await supabase
+			.from('achievements')
+			.select('*', { count: 'exact', head: true });
+
+		if (totalCountError) {
+			console.error('Error fetching total achievements count:', totalCountError);
+		}
+
 		// Get driver achievements
 		const { data: driverAchievements, error: achievementsError } = await supabase
 			.from('driver_achievements')
@@ -148,7 +157,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			steamAvatar,
 			elo_changes: elo_changes || [],
 			trackAliasMap,
-			achievements
+			achievements,
+			totalAchievementsCount: totalAchievementsCount || 0
 		};
 	} catch (err) {
 		console.error(`[+page.server] Error loading driver ${driverGUID}:`, err);
