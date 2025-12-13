@@ -108,7 +108,7 @@ export function getDriversOGData(baseUrl: string = 'http://localhost:5173') {
 			'View driver rankings, statistics, and profiles of Syndicate Motorsport racing community members.',
 		image: `${baseUrl}/images/drivers.jpg`,
 		url: '/drivers',
-		type: 'website'
+		type: 'website' as const
 	};
 	const result = generateOpenGraphTags(data, baseUrl);
 	return result;
@@ -151,6 +151,24 @@ export function getSupportUsOGData(baseUrl: string = 'https://syndicate-motorspo
 			image: `${baseUrl}/images/support_us.jpg`,
 			url: '/support-us',
 			type: 'website'
+		},
+		baseUrl
+	);
+}
+
+export function getDriverAchievementsOGData(
+	driver: any,
+	unlockedCount: number,
+	totalCount: number,
+	baseUrl: string = 'https://syndicate-motorsport.com'
+) {
+	return generateOpenGraphTags(
+		{
+			title: `${driver.driver} - Achievements | Syndicate Motorsport`,
+			description: `View ${driver.driver}'s achievements: ${unlockedCount} of ${totalCount} unlocked. See all racing achievements and progress in Syndicate Motorsport.`,
+			image: `${baseUrl}/images/drivers.jpg`,
+			url: `/driver/${driver.driver_guid}/achievements`,
+			type: 'profile' as const
 		},
 		baseUrl
 	);

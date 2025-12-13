@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Driver } from '$lib/drivers';
 	import { getSupabaseImageUrl } from '$lib/imageUtils';
+	import { getDriverAchievementsOGData } from '$lib/og';
 
 	type Achievement = {
 		id: number;
@@ -23,6 +24,15 @@
 
 	let driver = $derived(data.driver);
 	let achievements = $derived(data.achievements || []);
+
+	// Calculate unlocked and total counts for OG data
+	let unlocked_count = $derived(
+		achievements.filter((a: { unlocked: boolean }) => a.unlocked).length
+	);
+	let total_count = $derived(achievements.length);
+
+	// Generate Open Graph data
+	const ogData = $derived(getDriverAchievementsOGData(driver, unlocked_count, total_count));
 
 	// Get achievement icon URL from achievement_icons bucket
 	function getAchievementIconUrl(achievement: Achievement): string | null {
@@ -57,7 +67,20 @@
 </script>
 
 <svelte:head>
-	<title>{driver.driver} - Achievements</title>
+	<title>{ogData.title}</title>
+	<meta name="description" content={ogData.description} />
+	<meta property="og:title" content={ogData['og:title']} />
+	<meta property="og:description" content={ogData['og:description']} />
+	<meta property="og:image" content={ogData['og:image']} />
+	<meta property="og:url" content={ogData['og:url']} />
+	<meta property="og:type" content={ogData['og:type']} />
+	<meta property="og:site_name" content={ogData['og:site_name']} />
+	<meta property="og:locale" content={ogData['og:locale']} />
+
+	<meta name="twitter:card" content={ogData['twitter:card']} />
+	<meta name="twitter:title" content={ogData['twitter:title']} />
+	<meta name="twitter:description" content={ogData['twitter:description']} />
+	<meta name="twitter:image" content={ogData['twitter:image']} />
 </svelte:head>
 
 <div class="m-8 mx-auto max-w-6xl">
