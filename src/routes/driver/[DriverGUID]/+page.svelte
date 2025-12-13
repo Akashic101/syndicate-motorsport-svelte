@@ -11,6 +11,7 @@
 	import type { DataTableOptions } from 'simple-datatables';
 	import { Card, Spinner } from 'flowbite-svelte';
 	import { getFixedTrackName } from '$lib/trackAliases';
+	import { getSupabaseImageUrl } from '$lib/imageUtils';
 
 	interface CellNode {
 		nodeName: string;
@@ -38,17 +39,30 @@
 		platform: string | null;
 	};
 
+	type Achievement = {
+		id: number;
+		key: string | null;
+		name: string | null;
+		description: string | null;
+		category: string | null;
+		threshold: number | null;
+		icon_url: string | null;
+		unlocked_at: string;
+	};
+
 	let { data } = $props<{
 		data: {
 			driver: Driver;
 			steamAvatar: string | null;
 			elo_changes: EloChange[];
 			trackAliasMap: Record<string, string>;
+			achievements: Achievement[];
 		};
 	}>();
 	let driver = $derived(data.driver);
 	let steamAvatar = $derived(data.steamAvatar);
 	let elo_changes = $derived(data.elo_changes);
+	let achievements = $derived(data.achievements || []);
 	// Sort ELO changes by date descending (most recent first) for table display
 	let sorted_elo_changes = $derived.by(() => {
 		if (!elo_changes) return [];
@@ -64,7 +78,7 @@
 	// Calculate cumulative ELO for chart (starting at start_elo)
 	let cumulative_elo = $derived.by(() => {
 		if (!elo_changes || elo_changes.length === 0) return [];
-		const start_elo_value = driver.start_elo_value;
+		const start_elo_value = driver.start_elo;
 		let cumulative = start_elo_value;
 		return elo_changes.map((change: EloChange) => {
 			cumulative += change.elo_change || 0;
@@ -321,6 +335,15 @@
 				return '';
 		}
 	}
+
+	// Get achievement icon URL from achievement_icons bucket
+	function getAchievementIconUrl(achievement: Achievement): string | null {
+		if (!achievement.key) return null;
+		// Use bucket::path convention to specify the achievement_icons bucket
+		// Add .png extension since all achievement icons are PNG files
+		const imagePath = `achievement_icons::${achievement.key}.png`;
+		return getSupabaseImageUrl(imagePath);
+	}
 </script>
 
 <svelte:head>
@@ -509,6 +532,38 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Achievements -->
+		{#if achievements && achievements.length > 0}
+			<div class="mb-8 border-t border-gray-200 pt-8 dark:border-gray-700">
+				<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Achievements</h2>
+				<div class="grid grid-cols-4 gap-4">
+					{#each achievements as achievement}
+						{@const iconUrl = getAchievementIconUrl(achievement)}
+						<div class="flex flex-col items-center justify-center gap-2">
+							{#if iconUrl}
+								<img
+									src={iconUrl}
+									alt={achievement.name || achievement.key || 'Achievement'}
+									class="h-32 w-32 object-contain"
+								/>
+							{:else}
+								<div
+									class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
+								>
+									<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
+								</div>
+							{/if}
+							{#if achievement.name}
+								<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+									{achievement.name}
+								</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 		<!-- ELO Changes Chart -->
 		{#if elo_changes && elo_changes.length > 0 && isClient}

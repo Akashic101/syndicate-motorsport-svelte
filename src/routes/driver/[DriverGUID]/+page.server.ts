@@ -109,11 +109,46 @@ export const load: PageServerLoad = async ({ params }) => {
 		const trackAliases = await getAllTrackAliases();
 		const trackAliasMap = createTrackAliasObject(trackAliases);
 
+		// Get driver achievements
+		const { data: driverAchievements, error: achievementsError } = await supabase
+			.from('driver_achievements')
+			.select('id, unlocked_at, achievement_id, achievements(*)')
+			.eq('driver_guid', driverGUID)
+			.order('unlocked_at', { ascending: false });
+
+		if (achievementsError) {
+			console.error('Error fetching driver achievements:', achievementsError);
+		}
+
+		// Transform achievements data
+		const achievements =
+			driverAchievements
+				?.filter(
+					(da) =>
+						da.achievements &&
+						typeof da.achievements === 'object' &&
+						!Array.isArray(da.achievements)
+				)
+				.map((da) => {
+					const achievement = da.achievements as any;
+					return {
+						id: achievement.id,
+						key: achievement.key,
+						name: achievement.name,
+						description: achievement.description,
+						category: achievement.category,
+						threshold: achievement.threshold,
+						icon_url: achievement.icon_url,
+						unlocked_at: da.unlocked_at
+					};
+				}) || [];
+
 		return {
 			driver: driverWithStartElo,
 			steamAvatar,
 			elo_changes: elo_changes || [],
-			trackAliasMap
+			trackAliasMap,
+			achievements
 		};
 	} catch (err) {
 		console.error(`[+page.server] Error loading driver ${driverGUID}:`, err);
