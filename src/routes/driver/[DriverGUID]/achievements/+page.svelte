@@ -2,6 +2,8 @@
 	import type { Driver } from '$lib/drivers';
 	import { getSupabaseImageUrl } from '$lib/imageUtils';
 	import { getDriverAchievementsOGData } from '$lib/og';
+	import { fly, fade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	type Achievement = {
 		id: number;
@@ -12,8 +14,11 @@
 		subcategory: string | null;
 		threshold: number | null;
 		icon_url: string | null;
+		level: number | null;
 		unlocked: boolean;
 		unlocked_at: string | null;
+		unlocked_count?: number;
+		percentage?: number;
 	};
 
 	let { data } = $props<{
@@ -25,6 +30,12 @@
 
 	let driver = $derived(data.driver);
 	let achievements = $derived(data.achievements || []);
+
+	// Sort mode: 'default', 'newest', 'rarest', 'level'
+	let sort_mode = $state<'default' | 'newest' | 'rarest' | 'level'>('default');
+
+	// Track which achievement is currently showing its tooltip
+	let hovered_achievement_id = $state<number | null>(null);
 
 	// Calculate unlocked and total counts for OG data
 	let unlocked_count = $derived(
@@ -44,7 +55,7 @@
 		return getSupabaseImageUrl(imagePath);
 	}
 
-	// Group achievements by category and sort by subcategory
+	// Group achievements by category and apply sorting based on sort_mode
 	let achievements_by_category = $derived.by(() => {
 		const grouped: Record<string, Achievement[]> = {};
 		for (const achievement of achievements) {
@@ -54,13 +65,59 @@
 			}
 			grouped[category].push(achievement);
 		}
-		// Sort achievements within each category by subcategory
+
+		// Sort achievements within each category based on sort_mode
 		for (const category in grouped) {
-			grouped[category].sort((a, b) => {
-				const subcatA = a.subcategory || '';
-				const subcatB = b.subcategory || '';
-				return subcatA.localeCompare(subcatB);
-			});
+			if (sort_mode === 'newest') {
+				// Sort by unlocked_at descending (newest first), unlocked achievements first
+				grouped[category].sort((a, b) => {
+					// Unlocked achievements first
+					if (a.unlocked !== b.unlocked) {
+						return a.unlocked ? -1 : 1;
+					}
+					// Then by unlocked_at (newest first)
+					if (a.unlocked && b.unlocked) {
+						const dateA = a.unlocked_at ? new Date(a.unlocked_at).getTime() : 0;
+						const dateB = b.unlocked_at ? new Date(b.unlocked_at).getTime() : 0;
+						return dateB - dateA;
+					}
+					// Locked achievements at the end, sorted by subcategory
+					const subcatA = a.subcategory || '';
+					const subcatB = b.subcategory || '';
+					return subcatA.localeCompare(subcatB);
+				});
+			} else if (sort_mode === 'rarest') {
+				// Sort by unlocked_count ascending (rarest first), unlocked achievements first
+				grouped[category].sort((a, b) => {
+					// Unlocked achievements first
+					if (a.unlocked !== b.unlocked) {
+						return a.unlocked ? -1 : 1;
+					}
+					// Then by unlocked_count (rarest first)
+					const countA = a.unlocked_count ?? Infinity;
+					const countB = b.unlocked_count ?? Infinity;
+					return countA - countB;
+				});
+			} else if (sort_mode === 'level') {
+				// Sort by level ascending (lowest level first), unlocked achievements first
+				grouped[category].sort((a, b) => {
+					// Unlocked achievements first
+					if (a.unlocked !== b.unlocked) {
+						return a.unlocked ? -1 : 1;
+					}
+					// Then by level (lowest first)
+					const levelA = a.level ?? Infinity;
+					const levelB = b.level ?? Infinity;
+					return levelA - levelB;
+				});
+			} else {
+				// Default: sort by subcategory
+				grouped[category].sort((a, b) => {
+					const subcatA = a.subcategory || '';
+					const subcatB = b.subcategory || '';
+					return subcatA.localeCompare(subcatB);
+				});
+			}
 		}
 		return grouped;
 	});
@@ -102,13 +159,60 @@
 
 	<div class="rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
 		<div class="mb-8">
-			<h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-				{driver.driver}'s Achievements
-			</h1>
-			<p class="text-gray-600 dark:text-gray-400">
-				{achievements.filter((a: { unlocked: boolean }) => a.unlocked).length} of {achievements.length}
-				achievements unlocked
-			</p>
+			<div class="mb-4 flex items-center justify-between">
+				<div>
+					<h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+						{driver.driver}'s Achievements
+					</h1>
+					<p class="text-gray-600 dark:text-gray-400">
+						{achievements.filter((a: { unlocked: boolean }) => a.unlocked).length} of {achievements.length}
+						achievements unlocked
+					</p>
+				</div>
+				<!-- Sort toggle -->
+				<div class="flex items-center gap-2">
+					<button
+						type="button"
+						onclick={() => (sort_mode = 'default')}
+						class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {sort_mode ===
+						'default'
+							? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+							: 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}"
+					>
+						Default
+					</button>
+					<button
+						type="button"
+						onclick={() => (sort_mode = 'newest')}
+						class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {sort_mode ===
+						'newest'
+							? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+							: 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}"
+					>
+						Newest
+					</button>
+					<button
+						type="button"
+						onclick={() => (sort_mode = 'rarest')}
+						class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {sort_mode ===
+						'rarest'
+							? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+							: 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}"
+					>
+						Rarest
+					</button>
+					<button
+						type="button"
+						onclick={() => (sort_mode = 'level')}
+						class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {sort_mode ===
+						'level'
+							? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+							: 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}"
+					>
+						Level
+					</button>
+				</div>
+			</div>
 		</div>
 
 		{#each category_names as category}
@@ -119,8 +223,12 @@
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 					{#each achievements_by_category[category] as achievement}
 						{@const iconUrl = getAchievementIconUrl(achievement)}
+						{@const showTooltip = hovered_achievement_id === achievement.id}
 						<div
-							class="flex w-full flex-col items-center justify-center gap-2 rounded-lg p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700"
+							class="relative flex w-full flex-col items-center justify-center gap-2 rounded-lg p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700"
+							role="presentation"
+							onmouseenter={() => (hovered_achievement_id = achievement.id)}
+							onmouseleave={() => (hovered_achievement_id = null)}
 						>
 							<div class="relative">
 								{#if iconUrl}
@@ -160,6 +268,36 @@
 								>
 									{achievement.description}
 								</p>
+							{/if}
+							{#if showTooltip && achievement.unlocked_count !== undefined}
+								<div
+									class="absolute bottom-full left-1/2 z-10 mb-2 w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-lg dark:bg-gray-700"
+									in:fly={{ y: 10, duration: 200, easing: quintOut }}
+									out:fly={{ y: 10, duration: 150, easing: quintOut }}
+									role="tooltip"
+								>
+									<div class="space-y-1">
+										{#if achievement.description}
+											<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
+												{achievement.description}
+											</div>
+										{/if}
+										<div class="font-semibold whitespace-nowrap">
+											{achievement.unlocked_count} driver{achievement.unlocked_count !== 1
+												? 's'
+												: ''}
+										</div>
+										<div class="text-xs whitespace-nowrap text-gray-300">
+											{achievement.percentage !== undefined
+												? achievement.percentage.toFixed(1)
+												: '0.0'}% unlocked
+										</div>
+									</div>
+									<!-- Tooltip arrow -->
+									<div
+										class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
+									></div>
+								</div>
 							{/if}
 						</div>
 					{/each}

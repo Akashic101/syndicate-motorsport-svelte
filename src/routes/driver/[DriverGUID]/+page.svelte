@@ -617,67 +617,67 @@
 					{#key show_rarest}
 						{#if displayed_achievements.length > 0}
 							{#each displayed_achievements as achievement, index (achievement.id)}
-							{@const iconUrl = getAchievementIconUrl(achievement)}
-							{@const showTooltip = hovered_achievement_id === achievement.id}
-							<div
-								class="relative flex flex-col items-center justify-center gap-2"
-								role="presentation"
-								in:fade={{ duration: 300, delay: index * 50 }}
-								out:fade={{ duration: 200 }}
-								onmouseenter={() => (hovered_achievement_id = achievement.id)}
-								onmouseleave={() => (hovered_achievement_id = null)}
-							>
-								{#if iconUrl}
-									<img
-										src={iconUrl}
-										alt={achievement.name || achievement.key || 'Achievement'}
-										class="h-32 w-32 object-contain"
-									/>
-								{:else}
-									<div
-										class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
-									>
-										<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
-									</div>
-								{/if}
-								{#if achievement.name}
-									<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-										{achievement.name}
-									</p>
-								{/if}
-								{#key achievement.id}
-									{#if showTooltip && achievement.unlocked_count !== undefined}
+								{@const iconUrl = getAchievementIconUrl(achievement)}
+								{@const showTooltip = hovered_achievement_id === achievement.id}
+								<div
+									class="relative flex flex-col items-center justify-center gap-2"
+									role="presentation"
+									in:fade={{ duration: 300, delay: index * 50 }}
+									out:fade={{ duration: 200 }}
+									onmouseenter={() => (hovered_achievement_id = achievement.id)}
+									onmouseleave={() => (hovered_achievement_id = null)}
+								>
+									{#if iconUrl}
+										<img
+											src={iconUrl}
+											alt={achievement.name || achievement.key || 'Achievement'}
+											class="h-32 w-32 object-contain"
+										/>
+									{:else}
 										<div
-											class="absolute bottom-full left-1/2 z-10 mb-2 w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-lg dark:bg-gray-700"
-											in:fly={{ y: 10, duration: 200, easing: quintOut }}
-											out:fly={{ y: 10, duration: 150, easing: quintOut }}
-											role="tooltip"
+											class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
 										>
-											<div class="space-y-1">
-												{#if achievement.description}
-													<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
-														{achievement.description}
-													</div>
-												{/if}
-												<div class="font-semibold whitespace-nowrap">
-													{achievement.unlocked_count} driver{achievement.unlocked_count !== 1
-														? 's'
-														: ''}
-												</div>
-												<div class="text-xs whitespace-nowrap text-gray-300">
-													{achievement.percentage !== undefined
-														? achievement.percentage.toFixed(1)
-														: '0.0'}% unlocked
-												</div>
-											</div>
-											<!-- Tooltip arrow -->
-											<div
-												class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
-											></div>
+											<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
 										</div>
 									{/if}
-								{/key}
-							</div>
+									{#if achievement.name}
+										<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+											{achievement.name}
+										</p>
+									{/if}
+									{#key achievement.id}
+										{#if showTooltip && achievement.unlocked_count !== undefined}
+											<div
+												class="absolute bottom-full left-1/2 z-10 mb-2 w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-lg dark:bg-gray-700"
+												in:fly={{ y: 10, duration: 200, easing: quintOut }}
+												out:fly={{ y: 10, duration: 150, easing: quintOut }}
+												role="tooltip"
+											>
+												<div class="space-y-1">
+													{#if achievement.description}
+														<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
+															{achievement.description}
+														</div>
+													{/if}
+													<div class="font-semibold whitespace-nowrap">
+														{achievement.unlocked_count} driver{achievement.unlocked_count !== 1
+															? 's'
+															: ''}
+													</div>
+													<div class="text-xs whitespace-nowrap text-gray-300">
+														{achievement.percentage !== undefined
+															? achievement.percentage.toFixed(1)
+															: '0.0'}% unlocked
+													</div>
+												</div>
+												<!-- Tooltip arrow -->
+												<div
+													class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
+												></div>
+											</div>
+										{/if}
+									{/key}
+								</div>
 							{/each}
 						{:else}
 							<div

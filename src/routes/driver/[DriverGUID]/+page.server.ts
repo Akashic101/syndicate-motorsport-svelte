@@ -152,23 +152,29 @@ export const load: PageServerLoad = async ({ params }) => {
 			allRarestAchievements?.map((ra: any) => [ra.id, ra.unlocked_count]) || []
 		);
 
-		// Transform achievements data
-		const achievements =
-			driverAchievements
-				?.filter(
-					(da) =>
-						da.achievements &&
-						typeof da.achievements === 'object' &&
-						!Array.isArray(da.achievements)
-				)
-				.map((da) => {
-					const achievement = da.achievements as any;
-					const unlocked_count = unlockedCountMap.get(achievement.id) || 0;
-					const percentage =
+		// Transform achievements data and deduplicate by achievement.id
+		// (in case there are duplicate entries in driver_achievements)
+		const achievementsMap = new Map<number, any>();
+		driverAchievements
+			?.filter(
+				(da) =>
+					da.achievements && typeof da.achievements === 'object' && !Array.isArray(da.achievements)
+			)
+			.forEach((da) => {
+				const achievement = da.achievements as any;
+				const achievementId = achievement.id;
+
+				// Only add if we haven't seen this achievement ID before
+				// If duplicate, keep the one with the earliest unlocked_at timestamp
+				if (!achievementsMap.has(achievementId)) {
+					const unlocked_count = unlockedCountMap.get(achievementId) || 0;
+					const percentage = Math.min(
 						totalDriversCount && totalDriversCount > 0
 							? (unlocked_count / totalDriversCount) * 100
-							: 0;
-					return {
+							: 0,
+						100
+					);
+					achievementsMap.set(achievementId, {
 						id: achievement.id,
 						key: achievement.key,
 						name: achievement.name,
@@ -179,8 +185,39 @@ export const load: PageServerLoad = async ({ params }) => {
 						unlocked_at: da.unlocked_at,
 						unlocked_count,
 						percentage
-					};
-				}) || [];
+					});
+				} else {
+					// If duplicate exists, keep the one with the earliest unlocked_at
+					const existing = achievementsMap.get(achievementId);
+					const existingDate = existing.unlocked_at
+						? new Date(existing.unlocked_at).getTime()
+						: Infinity;
+					const newDate = da.unlocked_at ? new Date(da.unlocked_at).getTime() : Infinity;
+					if (newDate < existingDate) {
+						const unlocked_count = unlockedCountMap.get(achievementId) || 0;
+						const percentage = Math.min(
+							totalDriversCount && totalDriversCount > 0
+								? (unlocked_count / totalDriversCount) * 100
+								: 0,
+							100
+						);
+						achievementsMap.set(achievementId, {
+							id: achievement.id,
+							key: achievement.key,
+							name: achievement.name,
+							description: achievement.description,
+							category: achievement.category,
+							threshold: achievement.threshold,
+							icon_url: achievement.icon_url,
+							unlocked_at: da.unlocked_at,
+							unlocked_count,
+							percentage
+						});
+					}
+				}
+			});
+
+		const achievements = Array.from(achievementsMap.values());
 
 		// Get rarest achievements for this driver
 		// The rarest_achievements view shows all achievements ordered by rarity
@@ -252,10 +289,12 @@ export const load: PageServerLoad = async ({ params }) => {
 				fullAchievements
 					?.map((achievement: any) => {
 						const unlocked_count = rarestUnlockedCountMap.get(achievement.id) || 0;
-						const percentage =
+						const percentage = Math.min(
 							totalDriversCount && totalDriversCount > 0
 								? (unlocked_count / totalDriversCount) * 100
-								: 0;
+								: 0,
+							100
+						);
 						return {
 							id: achievement.id,
 							key: achievement.key,

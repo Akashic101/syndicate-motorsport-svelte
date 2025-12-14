@@ -32,6 +32,29 @@ export const load: PageServerLoad = async ({ params }) => {
 			console.error('Error fetching all achievements:', allAchievementsError);
 		}
 
+		// Get total driver count for percentage calculation
+		const { count: totalDriversCount, error: totalDriversError } = await supabase
+			.from('drivers')
+			.select('*', { count: 'exact', head: true });
+
+		if (totalDriversError) {
+			console.error('Error fetching total drivers count:', totalDriversError);
+		}
+
+		// Get unlock counts for all achievements from rarest_achievements view
+		const { data: allRarestAchievements, error: allRarestError } = await supabase
+			.from('rarest_achievements')
+			.select('id, unlocked_count');
+
+		if (allRarestError) {
+			console.error('Error fetching all rarest achievements:', allRarestError);
+		}
+
+		// Create a map of achievement_id -> unlocked_count
+		const unlockedCountMap = new Map(
+			allRarestAchievements?.map((ra: any) => [ra.id, ra.unlocked_count]) || []
+		);
+
 		// Fetch driver's unlocked achievements
 		const { data: driverAchievements, error: achievementsError } = await supabase
 			.from('driver_achievements')
@@ -47,7 +70,8 @@ export const load: PageServerLoad = async ({ params }) => {
 					category,
 					subcategory,
 					threshold,
-					icon_url
+					icon_url,
+					level
 				)
 			`
 			)
@@ -68,6 +92,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			subcategory: string | null;
 			threshold: number | null;
 			icon_url: string | null;
+			level: number | null;
 		};
 
 		type DriverAchievementRow = {
@@ -80,17 +105,30 @@ export const load: PageServerLoad = async ({ params }) => {
 		const unlockedAchievements =
 			(driverAchievements as DriverAchievementRow[] | null)
 				?.filter((da) => da.achievements !== null)
-				.map((da) => ({
-					id: da.achievements!.id,
-					key: da.achievements!.key,
-					name: da.achievements!.name,
-					description: da.achievements!.description,
-					category: da.achievements!.category,
-					subcategory: da.achievements!.subcategory,
-					threshold: da.achievements!.threshold,
-					icon_url: da.achievements!.icon_url,
-					unlocked_at: da.unlocked_at
-				})) || [];
+				.map((da) => {
+					const achievementId = da.achievements!.id;
+					const unlocked_count = unlockedCountMap.get(achievementId) || 0;
+					const percentage = Math.min(
+						totalDriversCount && totalDriversCount > 0
+							? (unlocked_count / totalDriversCount) * 100
+							: 0,
+						100
+					);
+					return {
+						id: achievementId,
+						key: da.achievements!.key,
+						name: da.achievements!.name,
+						description: da.achievements!.description,
+						category: da.achievements!.category,
+						subcategory: da.achievements!.subcategory,
+						threshold: da.achievements!.threshold,
+						icon_url: da.achievements!.icon_url,
+						level: da.achievements!.level,
+						unlocked_at: da.unlocked_at,
+						unlocked_count,
+						percentage
+					};
+				}) || [];
 
 		// Create a set of unlocked achievement IDs for quick lookup
 		const unlockedIds = new Set(unlockedAchievements.map((a) => a.id));
@@ -99,6 +137,11 @@ export const load: PageServerLoad = async ({ params }) => {
 		const achievements = ((allAchievements as AchievementRow[] | null) || []).map((achievement) => {
 			const isUnlocked = unlockedIds.has(achievement.id);
 			const unlockedData = unlockedAchievements.find((a) => a.id === achievement.id);
+			const unlocked_count = unlockedCountMap.get(achievement.id) || 0;
+			const percentage = Math.min(
+				totalDriversCount && totalDriversCount > 0 ? (unlocked_count / totalDriversCount) * 100 : 0,
+				100
+			);
 
 			return {
 				id: achievement.id,
@@ -109,8 +152,11 @@ export const load: PageServerLoad = async ({ params }) => {
 				subcategory: achievement.subcategory,
 				threshold: achievement.threshold,
 				icon_url: achievement.icon_url,
+				level: achievement.level,
 				unlocked: isUnlocked,
-				unlocked_at: unlockedData?.unlocked_at || null
+				unlocked_at: unlockedData?.unlocked_at || null,
+				unlocked_count,
+				percentage
 			};
 		});
 
