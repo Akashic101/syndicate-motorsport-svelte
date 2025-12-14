@@ -269,7 +269,9 @@ export const load: PageServerLoad = async ({ params }) => {
 							percentage
 						};
 					})
-					.filter((ra: any) => ra.id != null) || [];
+					.filter((ra: any) => ra.id != null)
+					// Sort by unlocked_count ascending (rarest first)
+					.sort((a: any, b: any) => (a.unlocked_count || 0) - (b.unlocked_count || 0)) || [];
 		}
 
 		const rarest_achievements = rarest_achievements_full;
