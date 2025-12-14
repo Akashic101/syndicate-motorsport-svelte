@@ -15,6 +15,7 @@
 		threshold: number | null;
 		icon_url: string | null;
 		level: number | null;
+		hidden: boolean;
 		unlocked: boolean;
 		unlocked_at: string | null;
 		unlocked_count?: number;
@@ -53,6 +54,23 @@
 		// Add .png extension since all achievement icons are PNG files
 		const imagePath = `achievement_icons::${achievement.key}.png`;
 		return getSupabaseImageUrl(imagePath);
+	}
+
+	// Format unlock date in local timezone
+	function formatUnlockDate(date_string: string | null): string {
+		if (!date_string) return '';
+		try {
+			const date = new Date(date_string);
+			return date.toLocaleString(undefined, {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+		} catch {
+			return '';
+		}
 	}
 
 	// Group achievements by category and apply sorting based on sort_mode
@@ -231,42 +249,55 @@
 							onmouseleave={() => (hovered_achievement_id = null)}
 						>
 							<div class="relative">
-								{#if iconUrl}
-									<img
-										src={iconUrl}
-										alt={achievement.name || achievement.key || 'Achievement'}
-										class="h-24 w-24 object-contain {achievement.unlocked
-											? ''
-											: 'opacity-20 grayscale'}"
-									/>
+								{#if !achievement.hidden}
+									{#if iconUrl}
+										<img
+											src={iconUrl}
+											alt={achievement.name || achievement.key || 'Achievement'}
+											class="h-24 w-24 object-contain {!achievement.unlocked
+												? 'opacity-20 grayscale'
+												: ''}"
+										/>
+									{:else}
+										<div
+											class="flex h-24 w-24 items-center justify-center rounded bg-gray-200 dark:bg-gray-700 {!achievement.unlocked
+												? 'opacity-20'
+												: ''}"
+										>
+											<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
+										</div>
+									{/if}
 								{:else}
 									<div
-										class="flex h-24 w-24 items-center justify-center rounded bg-gray-200 dark:bg-gray-700 {achievement.unlocked
-											? ''
-											: 'opacity-20'}"
-									>
-										<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
-									</div>
+										class="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 opacity-20 dark:bg-gray-700"
+									></div>
 								{/if}
-								{#if !achievement.unlocked}
-									<div class="bg-opacity-20 absolute inset-0 rounded" title="Locked"></div>
+								{#if !achievement.unlocked || achievement.hidden}
+									<div
+										class="bg-opacity-20 absolute inset-0 rounded"
+										title={achievement.hidden ? 'Hidden' : 'Locked'}
+									></div>
 								{/if}
 							</div>
 							<p
-								class="line-clamp-2 min-h-[3rem] text-center text-lg font-medium {achievement.unlocked
-									? 'text-gray-700 dark:text-gray-300'
-									: 'text-gray-400 dark:text-gray-500'}"
+								class="line-clamp-2 min-h-[3rem] text-center text-lg font-medium {achievement.hidden ||
+								!achievement.unlocked
+									? 'text-gray-400 dark:text-gray-500'
+									: 'text-gray-700 dark:text-gray-300'}"
 							>
 								{achievement.name}
 							</p>
-							{#if achievement.description}
+							{#if achievement.description || achievement.hidden}
 								<p
-									class="line-clamp-2 w-full px-1 text-center text-sm {achievement.unlocked
-										? 'text-gray-500 dark:text-gray-400'
-										: 'text-gray-400 dark:text-gray-500'}"
-									title={achievement.description}
+									class="line-clamp-2 w-full px-1 text-center text-sm {achievement.hidden ||
+									!achievement.unlocked
+										? 'text-gray-400 dark:text-gray-500'
+										: 'text-gray-500 dark:text-gray-400'}"
+									title={achievement.hidden
+										? 'This Achievement is a secret'
+										: achievement.description}
 								>
-									{achievement.description}
+									{achievement.hidden ? 'This Achievement is a secret' : achievement.description}
 								</p>
 							{/if}
 							{#if showTooltip && achievement.unlocked_count !== undefined}
@@ -277,9 +308,11 @@
 									role="tooltip"
 								>
 									<div class="space-y-1">
-										{#if achievement.description}
+										{#if achievement.description || achievement.hidden}
 											<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
-												{achievement.description}
+												{achievement.hidden
+													? 'This Achievement is a secret'
+													: achievement.description}
 											</div>
 										{/if}
 										<div class="font-semibold whitespace-nowrap">
@@ -292,6 +325,11 @@
 												? achievement.percentage.toFixed(1)
 												: '0.0'}% unlocked
 										</div>
+										{#if achievement.unlocked && achievement.unlocked_at}
+											<div class="mt-1 border-t border-gray-700 pt-1 text-xs text-gray-300">
+												Unlocked: {formatUnlockDate(achievement.unlocked_at)}
+											</div>
+										{/if}
 									</div>
 									<!-- Tooltip arrow -->
 									<div

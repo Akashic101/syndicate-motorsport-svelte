@@ -48,6 +48,7 @@
 		category: string | null;
 		threshold: number | null;
 		icon_url: string | null;
+		hidden: boolean;
 		unlocked_at: string | null;
 		unlocked_count?: number;
 		percentage?: number;
@@ -379,6 +380,23 @@
 		const imagePath = `achievement_icons::${achievement.key}.png`;
 		return getSupabaseImageUrl(imagePath);
 	}
+
+	// Format unlock date in local timezone
+	function formatUnlockDate(date_string: string | null): string {
+		if (!date_string) return '';
+		try {
+			const date = new Date(date_string);
+			return date.toLocaleString(undefined, {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+		} catch {
+			return '';
+		}
+	}
 </script>
 
 <svelte:head>
@@ -627,21 +645,25 @@
 									onmouseenter={() => (hovered_achievement_id = achievement.id)}
 									onmouseleave={() => (hovered_achievement_id = null)}
 								>
-									{#if iconUrl}
-										<img
-											src={iconUrl}
-											alt={achievement.name || achievement.key || 'Achievement'}
-											class="h-32 w-32 object-contain"
-										/>
-									{:else}
-										<div
-											class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
-										>
-											<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
-										</div>
+									{#if !achievement.hidden}
+										{#if iconUrl}
+											<img
+												src={iconUrl}
+												alt={achievement.name || achievement.key || 'Achievement'}
+												class="h-32 w-32 object-contain"
+											/>
+										{:else}
+											<div
+												class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
+											></div>
+										{/if}
 									{/if}
 									{#if achievement.name}
-										<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+										<p
+											class="text-center text-sm font-medium {achievement.hidden
+												? 'text-gray-400 dark:text-gray-500'
+												: 'text-gray-700 dark:text-gray-300'}"
+										>
 											{achievement.name}
 										</p>
 									{/if}
@@ -654,9 +676,11 @@
 												role="tooltip"
 											>
 												<div class="space-y-1">
-													{#if achievement.description}
+													{#if achievement.description || achievement.hidden}
 														<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
-															{achievement.description}
+															{achievement.hidden
+																? 'This Achievement is a secret'
+																: achievement.description}
 														</div>
 													{/if}
 													<div class="font-semibold whitespace-nowrap">
@@ -669,6 +693,11 @@
 															? achievement.percentage.toFixed(1)
 															: '0.0'}% unlocked
 													</div>
+													{#if achievement.unlocked_at}
+														<div class="mt-1 border-t border-gray-700 pt-1 text-xs text-gray-300">
+															Unlocked: {formatUnlockDate(achievement.unlocked_at)}
+														</div>
+													{/if}
 												</div>
 												<!-- Tooltip arrow -->
 												<div

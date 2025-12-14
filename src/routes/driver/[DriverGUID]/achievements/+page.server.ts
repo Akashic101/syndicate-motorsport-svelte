@@ -71,7 +71,8 @@ export const load: PageServerLoad = async ({ params }) => {
 					subcategory,
 					threshold,
 					icon_url,
-					level
+					level,
+					hidden
 				)
 			`
 			)
@@ -93,6 +94,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			threshold: number | null;
 			icon_url: string | null;
 			level: number | null;
+			hidden: boolean;
 		};
 
 		type DriverAchievementRow = {
@@ -124,6 +126,7 @@ export const load: PageServerLoad = async ({ params }) => {
 						threshold: da.achievements!.threshold,
 						icon_url: da.achievements!.icon_url,
 						level: da.achievements!.level,
+						hidden: da.achievements!.hidden,
 						unlocked_at: da.unlocked_at,
 						unlocked_count,
 						percentage
@@ -153,6 +156,7 @@ export const load: PageServerLoad = async ({ params }) => {
 				threshold: achievement.threshold,
 				icon_url: achievement.icon_url,
 				level: achievement.level,
+				hidden: achievement.hidden,
 				unlocked: isUnlocked,
 				unlocked_at: unlockedData?.unlocked_at || null,
 				unlocked_count,

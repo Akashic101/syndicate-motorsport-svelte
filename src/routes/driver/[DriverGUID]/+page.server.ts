@@ -182,6 +182,7 @@ export const load: PageServerLoad = async ({ params }) => {
 						category: achievement.category,
 						threshold: achievement.threshold,
 						icon_url: achievement.icon_url,
+						hidden: achievement.hidden,
 						unlocked_at: da.unlocked_at,
 						unlocked_count,
 						percentage
@@ -209,6 +210,7 @@ export const load: PageServerLoad = async ({ params }) => {
 							category: achievement.category,
 							threshold: achievement.threshold,
 							icon_url: achievement.icon_url,
+							hidden: achievement.hidden,
 							unlocked_at: da.unlocked_at,
 							unlocked_count,
 							percentage
@@ -303,6 +305,7 @@ export const load: PageServerLoad = async ({ params }) => {
 							category: achievement.category,
 							threshold: achievement.threshold,
 							icon_url: achievement.icon_url,
+							hidden: achievement.hidden,
 							unlocked_at: unlockedAtMap.get(achievement.id) || null,
 							unlocked_count,
 							percentage
