@@ -10,42 +10,72 @@ async function backfillAchievements() {
 	console.log('Fetching achievements...');
 	const { data: achievements, error: achError } = await supabase
 		.from('achievements')
-		.select('id, threshold, category');
+		.select('id, key, threshold, category, subcategory');
 
 	if (achError) throw achError;
-
 	console.log(`Loaded ${achievements.length} achievements`);
 
 	console.log('Fetching driver data...');
 	const { data: drivers, error: driverError } = await supabase
 		.from('driver_data')
-		.select('driver_guid, race_starts, win_count, safety_rating')
+		.select('driver_guid, race_starts, win_count, safety_rating, driver')
 		.not('driver_guid', 'is', null);
 
 	if (driverError) throw driverError;
+	console.log(`Loaded ${drivers.length} drivers`);
+
+	console.log('Fetching lap counts from view...');
+	const { data: lapCounts, error: lapError } = await supabase
+		.from('driver_lap_counts')
+		.select('driver_guid, total_laps_driven');
+
+	if (lapError) throw lapError;
+
+	const lapsByDriver = Object.fromEntries(
+		lapCounts.map((r) => [r.driver_guid, r.total_laps_driven])
+	);
 
 	console.log(`Processing ${drivers.length} drivers`);
 
 	for (const driver of drivers) {
-		const { driver_guid, race_starts, win_count, safety_rating } = driver;
+		const { driver_guid, race_starts, win_count, safety_rating, driver: name } = driver;
+		if (!name) continue;
 
-		// map categories → comparable numeric values
-		const stats = {
+		const statsMap = {
 			races: race_starts ?? 0,
 			wins: win_count ?? 0,
-			safety: mapSafetyRating(safety_rating)
+			safety: mapSafetyRating(safety_rating),
+			laps_driven: lapsByDriver[driver_guid] ?? 0
 		};
 
-		// achievements this driver qualifies for
-		const eligible = achievements.filter((a) => stats[a.category] >= a.threshold);
+		const eligible = achievements.filter((a) => {
+			if (!a.key) return false;
+
+			// Lap record achievements
+			if (a.key.startsWith('lap_records')) {
+				return statsMap['laps_driven'] >= a.threshold;
+			}
+
+			// Safety rating achievements
+			if (a.category === 'safety') {
+				return statsMap['safety'] >= a.threshold;
+			}
+
+			// All other achievements use category mapping
+			return statsMap[a.category] >= a.threshold;
+		});
 
 		if (!eligible.length) continue;
 
-		// fetch already unlocked
-		const { data: unlocked } = await supabase
+		const { data: unlocked, error: unlockError } = await supabase
 			.from('driver_achievements')
 			.select('achievement_id')
 			.eq('driver_guid', driver_guid);
+
+		if (unlockError) {
+			console.error(`Failed to fetch unlocked achievements for ${driver_guid}`);
+			continue;
+		}
 
 		const unlockedIds = new Set((unlocked ?? []).map((a) => a.achievement_id));
 
@@ -60,9 +90,9 @@ async function backfillAchievements() {
 			const { error: insertError } = await supabase.from('driver_achievements').insert(toInsert);
 
 			if (insertError) {
-				console.error(`Failed for driver ${driver_guid}:`, insertError.message);
+				console.error(`Failed to insert achievements for ${driver_guid}:`, insertError.message);
 			} else {
-				console.log(`Unlocked ${toInsert.length} achievements for ${driver_guid}`);
+				console.log(`Unlocked ${toInsert.length} achievements for ${name}`);
 			}
 		}
 	}
@@ -72,7 +102,6 @@ async function backfillAchievements() {
 
 function mapSafetyRating(rating) {
 	if (!rating) return 0;
-
 	switch (rating.toUpperCase()) {
 		case 'C':
 			return 1;

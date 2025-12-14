@@ -9,6 +9,7 @@
 		name: string | null;
 		description: string | null;
 		category: string | null;
+		subcategory: string | null;
 		threshold: number | null;
 		icon_url: string | null;
 		unlocked: boolean;
@@ -43,7 +44,7 @@
 		return getSupabaseImageUrl(imagePath);
 	}
 
-	// Group achievements by category
+	// Group achievements by category and sort by subcategory
 	let achievements_by_category = $derived.by(() => {
 		const grouped: Record<string, Achievement[]> = {};
 		for (const achievement of achievements) {
@@ -52,6 +53,14 @@
 				grouped[category] = [];
 			}
 			grouped[category].push(achievement);
+		}
+		// Sort achievements within each category by subcategory
+		for (const category in grouped) {
+			grouped[category].sort((a, b) => {
+				const subcatA = a.subcategory || '';
+				const subcatB = b.subcategory || '';
+				return subcatA.localeCompare(subcatB);
+			});
 		}
 		return grouped;
 	});
@@ -111,7 +120,7 @@
 					{#each achievements_by_category[category] as achievement}
 						{@const iconUrl = getAchievementIconUrl(achievement)}
 						<div
-							class="flex flex-col items-center justify-center gap-2 rounded-lg p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700"
+							class="flex w-full flex-col items-center justify-center gap-2 rounded-lg p-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-700"
 						>
 							<div class="relative">
 								{#if iconUrl}
@@ -135,18 +144,16 @@
 									<div class="bg-opacity-20 absolute inset-0 rounded" title="Locked"></div>
 								{/if}
 							</div>
-							{#if achievement.name}
-								<p
-									class="text-center text-lg font-medium {achievement.unlocked
-										? 'text-gray-700 dark:text-gray-300'
-										: 'text-gray-400 dark:text-gray-500'}"
-								>
-									{achievement.name}
-								</p>
-							{/if}
+							<p
+								class="line-clamp-2 min-h-[3rem] text-center text-lg font-medium {achievement.unlocked
+									? 'text-gray-700 dark:text-gray-300'
+									: 'text-gray-400 dark:text-gray-500'}"
+							>
+								{achievement.name}
+							</p>
 							{#if achievement.description}
 								<p
-									class="truncate text-center text-sm {achievement.unlocked
+									class="line-clamp-2 w-full px-1 text-center text-sm {achievement.unlocked
 										? 'text-gray-500 dark:text-gray-400'
 										: 'text-gray-400 dark:text-gray-500'}"
 									title={achievement.description}

@@ -25,6 +25,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			.from('achievements')
 			.select('*')
 			.order('category', { ascending: true })
+			.order('subcategory', { ascending: true })
 			.order('threshold', { ascending: true });
 
 		if (allAchievementsError) {
@@ -44,6 +45,7 @@ export const load: PageServerLoad = async ({ params }) => {
 					name,
 					description,
 					category,
+					subcategory,
 					threshold,
 					icon_url
 				)
@@ -63,6 +65,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			name: string | null;
 			description: string | null;
 			category: string | null;
+			subcategory: string | null;
 			threshold: number | null;
 			icon_url: string | null;
 		};
@@ -83,6 +86,7 @@ export const load: PageServerLoad = async ({ params }) => {
 					name: da.achievements!.name,
 					description: da.achievements!.description,
 					category: da.achievements!.category,
+					subcategory: da.achievements!.subcategory,
 					threshold: da.achievements!.threshold,
 					icon_url: da.achievements!.icon_url,
 					unlocked_at: da.unlocked_at
@@ -102,6 +106,7 @@ export const load: PageServerLoad = async ({ params }) => {
 				name: achievement.name,
 				description: achievement.description,
 				category: achievement.category,
+				subcategory: achievement.subcategory,
 				threshold: achievement.threshold,
 				icon_url: achievement.icon_url,
 				unlocked: isUnlocked,
