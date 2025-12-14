@@ -118,6 +118,15 @@ export const load: PageServerLoad = async ({ params }) => {
 			console.error('Error fetching total achievements count:', totalCountError);
 		}
 
+		// Get total driver count for percentage calculation
+		const { count: totalDriversCount, error: totalDriversError } = await supabase
+			.from('drivers')
+			.select('*', { count: 'exact', head: true });
+
+		if (totalDriversError) {
+			console.error('Error fetching total drivers count:', totalDriversError);
+		}
+
 		// Get driver achievements
 		const { data: driverAchievements, error: achievementsError } = await supabase
 			.from('driver_achievements')
@@ -128,6 +137,20 @@ export const load: PageServerLoad = async ({ params }) => {
 		if (achievementsError) {
 			console.error('Error fetching driver achievements:', achievementsError);
 		}
+
+		// Get unlock counts for all achievements from rarest_achievements view
+		const { data: allRarestAchievements, error: allRarestError } = await supabase
+			.from('rarest_achievements')
+			.select('id, unlocked_count');
+
+		if (allRarestError) {
+			console.error('Error fetching all rarest achievements:', allRarestError);
+		}
+
+		// Create a map of achievement_id -> unlocked_count
+		const unlockedCountMap = new Map(
+			allRarestAchievements?.map((ra: any) => [ra.id, ra.unlocked_count]) || []
+		);
 
 		// Transform achievements data
 		const achievements =
@@ -140,6 +163,11 @@ export const load: PageServerLoad = async ({ params }) => {
 				)
 				.map((da) => {
 					const achievement = da.achievements as any;
+					const unlocked_count = unlockedCountMap.get(achievement.id) || 0;
+					const percentage =
+						totalDriversCount && totalDriversCount > 0
+							? (unlocked_count / totalDriversCount) * 100
+							: 0;
 					return {
 						id: achievement.id,
 						key: achievement.key,
@@ -148,9 +176,103 @@ export const load: PageServerLoad = async ({ params }) => {
 						category: achievement.category,
 						threshold: achievement.threshold,
 						icon_url: achievement.icon_url,
-						unlocked_at: da.unlocked_at
+						unlocked_at: da.unlocked_at,
+						unlocked_count,
+						percentage
 					};
 				}) || [];
+
+		// Get rarest achievements for this driver
+		// The rarest_achievements view shows all achievements ordered by rarity
+		// We need to join with driver_achievements to get only achievements this driver has unlocked
+		const { data: rarestAchievements, error: rarestError } = await supabase
+			.from('rarest_achievements')
+			.select(
+				`
+				id,
+				key,
+				name,
+				category,
+				subcategory,
+				unlocked_count,
+				driver_achievements!inner (
+					unlocked_at,
+					driver_guid
+				)
+			`
+			)
+			.eq('driver_achievements.driver_guid', driverGUID)
+			.order('unlocked_count', { ascending: true })
+			.limit(4);
+
+		if (rarestError) {
+			console.error('Error fetching rarest achievements:', rarestError);
+		}
+
+		// Get full achievement details including description, threshold, and icon_url
+		// by joining with the achievements table
+		const rarest_achievement_ids =
+			rarestAchievements?.map((ra: any) => ra.id).filter((id: any) => id != null) || [];
+
+		let rarest_achievements_full: any[] = [];
+
+		if (rarest_achievement_ids.length > 0) {
+			const { data: fullAchievements, error: fullError } = await supabase
+				.from('achievements')
+				.select('*')
+				.in('id', rarest_achievement_ids);
+
+			if (fullError) {
+				console.error('Error fetching full rarest achievement details:', fullError);
+			}
+
+			// Get unlocked_at timestamps for these achievements
+			const { data: driverRarestAchievements, error: driverRarestError } = await supabase
+				.from('driver_achievements')
+				.select('achievement_id, unlocked_at')
+				.eq('driver_guid', driverGUID)
+				.in('achievement_id', rarest_achievement_ids);
+
+			if (driverRarestError) {
+				console.error('Error fetching driver rarest achievements:', driverRarestError);
+			}
+
+			// Create a map of achievement_id -> unlocked_at
+			const unlockedAtMap = new Map(
+				driverRarestAchievements?.map((dra: any) => [dra.achievement_id, dra.unlocked_at]) || []
+			);
+
+			// Create a map of achievement_id -> unlocked_count from rarestAchievements
+			const rarestUnlockedCountMap = new Map(
+				rarestAchievements?.map((ra: any) => [ra.id, ra.unlocked_count]) || []
+			);
+
+			// Transform to match the same structure as regular achievements
+			rarest_achievements_full =
+				fullAchievements
+					?.map((achievement: any) => {
+						const unlocked_count = rarestUnlockedCountMap.get(achievement.id) || 0;
+						const percentage =
+							totalDriversCount && totalDriversCount > 0
+								? (unlocked_count / totalDriversCount) * 100
+								: 0;
+						return {
+							id: achievement.id,
+							key: achievement.key,
+							name: achievement.name,
+							description: achievement.description,
+							category: achievement.category,
+							threshold: achievement.threshold,
+							icon_url: achievement.icon_url,
+							unlocked_at: unlockedAtMap.get(achievement.id) || null,
+							unlocked_count,
+							percentage
+						};
+					})
+					.filter((ra: any) => ra.id != null) || [];
+		}
+
+		const rarest_achievements = rarest_achievements_full;
 
 		return {
 			driver: driverWithStartElo,
@@ -158,6 +280,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			elo_changes: elo_changes || [],
 			trackAliasMap,
 			achievements,
+			rarest_achievements,
 			totalAchievementsCount: totalAchievementsCount || 0
 		};
 	} catch (err) {

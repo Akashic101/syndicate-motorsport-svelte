@@ -4,7 +4,8 @@
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
+	import { fly, fade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	import { Table } from '@flowbite-svelte-plugins/datatable';
 	import type { DataTable } from '@flowbite-svelte-plugins/datatable';
@@ -48,6 +49,8 @@
 		threshold: number | null;
 		icon_url: string | null;
 		unlocked_at: string | null;
+		unlocked_count?: number;
+		percentage?: number;
 	};
 
 	let { data } = $props<{
@@ -57,6 +60,7 @@
 			elo_changes: EloChange[];
 			trackAliasMap: Record<string, string>;
 			achievements: Achievement[];
+			rarest_achievements: Achievement[];
 			totalAchievementsCount: number;
 		};
 	}>();
@@ -64,7 +68,15 @@
 	let steamAvatar = $derived(data.steamAvatar);
 	let elo_changes = $derived(data.elo_changes);
 	let achievements = $derived(data.achievements || []);
+	let rarest_achievements = $derived(data.rarest_achievements || []);
 	let totalAchievementsCount = $derived(data.totalAchievementsCount || 0);
+
+	// Toggle state for switching between newest and rarest
+	let show_rarest = $state(false);
+
+	// Track which achievement is currently showing its tooltip
+	let hovered_achievement_id = $state<number | null>(null);
+
 	// Get last 4 achievements (sorted by unlocked_at descending, most recent first)
 	let recent_achievements = $derived.by(() => {
 		if (!achievements || achievements.length === 0) return [];
@@ -76,6 +88,15 @@
 		});
 		// Return only the first 4
 		return sorted.slice(0, 4);
+	});
+
+	// Get displayed achievements based on toggle state
+	// Fall back to newest if rarest is selected but no rarest achievements are available
+	let displayed_achievements = $derived.by(() => {
+		if (show_rarest && rarest_achievements && rarest_achievements.length > 0) {
+			return rarest_achievements;
+		}
+		return recent_achievements;
 	});
 	// Sort ELO changes by date descending (most recent first) for table display
 	let sorted_elo_changes = $derived.by(() => {
@@ -560,37 +581,114 @@
 								: ''} unlocked
 						</p>
 					</div>
-					<a
-						href="/driver/{driver.driver_guid}/achievements"
-						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-					>
-						Show All
-					</a>
+					<div class="flex items-center gap-4">
+						<!-- Toggle between newest and rarest (only show if rarest achievements exist) -->
+						{#if rarest_achievements && rarest_achievements.length > 0}
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									onclick={() => (show_rarest = false)}
+									class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {show_rarest
+										? 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+										: 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'}"
+								>
+									Newest
+								</button>
+								<button
+									type="button"
+									onclick={() => (show_rarest = true)}
+									class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors {show_rarest
+										? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+										: 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}"
+								>
+									Rarest
+								</button>
+							</div>
+						{/if}
+						<a
+							href="/driver/{driver.driver_guid}/achievements"
+							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+						>
+							Show All
+						</a>
+					</div>
 				</div>
 				<div class="grid grid-cols-4 gap-4">
-					{#each recent_achievements as achievement}
-						{@const iconUrl = getAchievementIconUrl(achievement)}
-						<div class="flex flex-col items-center justify-center gap-2">
-							{#if iconUrl}
-								<img
-									src={iconUrl}
-									alt={achievement.name || achievement.key || 'Achievement'}
-									class="h-32 w-32 object-contain"
-								/>
-							{:else}
-								<div
-									class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
-								>
-									<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
-								</div>
-							{/if}
-							{#if achievement.name}
-								<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-									{achievement.name}
-								</p>
-							{/if}
-						</div>
-					{/each}
+					{#key show_rarest}
+						{#if displayed_achievements.length > 0}
+							{#each displayed_achievements as achievement, index (achievement.id)}
+							{@const iconUrl = getAchievementIconUrl(achievement)}
+							{@const showTooltip = hovered_achievement_id === achievement.id}
+							<div
+								class="relative flex flex-col items-center justify-center gap-2"
+								role="presentation"
+								in:fade={{ duration: 300, delay: index * 50 }}
+								out:fade={{ duration: 200 }}
+								onmouseenter={() => (hovered_achievement_id = achievement.id)}
+								onmouseleave={() => (hovered_achievement_id = null)}
+							>
+								{#if iconUrl}
+									<img
+										src={iconUrl}
+										alt={achievement.name || achievement.key || 'Achievement'}
+										class="h-32 w-32 object-contain"
+									/>
+								{:else}
+									<div
+										class="flex h-32 w-32 items-center justify-center rounded bg-gray-200 dark:bg-gray-700"
+									>
+										<span class="text-xs text-gray-500 dark:text-gray-400">?</span>
+									</div>
+								{/if}
+								{#if achievement.name}
+									<p class="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+										{achievement.name}
+									</p>
+								{/if}
+								{#key achievement.id}
+									{#if showTooltip && achievement.unlocked_count !== undefined}
+										<div
+											class="absolute bottom-full left-1/2 z-10 mb-2 w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-lg dark:bg-gray-700"
+											in:fly={{ y: 10, duration: 200, easing: quintOut }}
+											out:fly={{ y: 10, duration: 150, easing: quintOut }}
+											role="tooltip"
+										>
+											<div class="space-y-1">
+												{#if achievement.description}
+													<div class="mb-1 border-b border-gray-700 pb-1 text-xs text-gray-200">
+														{achievement.description}
+													</div>
+												{/if}
+												<div class="font-semibold whitespace-nowrap">
+													{achievement.unlocked_count} driver{achievement.unlocked_count !== 1
+														? 's'
+														: ''}
+												</div>
+												<div class="text-xs whitespace-nowrap text-gray-300">
+													{achievement.percentage !== undefined
+														? achievement.percentage.toFixed(1)
+														: '0.0'}% unlocked
+												</div>
+											</div>
+											<!-- Tooltip arrow -->
+											<div
+												class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
+											></div>
+										</div>
+									{/if}
+								{/key}
+							</div>
+							{/each}
+						{:else}
+							<div
+								class="col-span-4 text-center text-gray-500 dark:text-gray-400"
+								in:fade={{ duration: 200 }}
+								out:fade={{ duration: 150 }}
+							>
+								<p>No achievements to display</p>
+							</div>
+						{/if}
+					{/key}
 				</div>
 			</div>
 		{/if}
