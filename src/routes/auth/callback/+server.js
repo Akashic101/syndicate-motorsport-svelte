@@ -15,10 +15,25 @@ export const GET = async (event) => {
 	}
 
 	if (code) {
-		const { error } = await supabase.auth.exchangeCodeForSession(code);
-		if (!error) {
+		const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+		
+		// Check if we have a session after exchange
+		// Sometimes exchangeCodeForSession returns an error but still creates a session
+		if (data?.session) {
 			// Redirect to the next path (clean URL without query params)
 			throw redirect(303, next);
+		}
+		
+		// If no session in data, try to get it directly
+		const { data: sessionData } = await supabase.auth.getSession();
+		if (sessionData?.session) {
+			// Session exists, redirect to next
+			throw redirect(303, next);
+		}
+		
+		// If there was an error and no session, log it for debugging
+		if (error) {
+			console.error('Error exchanging code for session:', error);
 		}
 	}
 
