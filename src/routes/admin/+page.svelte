@@ -52,24 +52,23 @@
 	async function sign_out() {
 		loading = true;
 		try {
+			// Try to sign out, but don't fail if session is already missing
 			const { error } = await supabase.auth.signOut();
-			if (error) {
+			// If error is about missing session, that's okay - we'll clear state anyway
+			if (error && !error.message?.includes('session missing')) {
 				console.error('Error signing out:', error);
-				alert('Failed to sign out. Please try again.');
-			} else {
-				// Clear the user state
-				user = null;
-				// Invalidate all server-side data to refresh the session
-				await invalidateAll();
-				// Navigate to admin page (which will show login since session is cleared)
-				await goto('/admin');
 			}
-		} catch (err) {
-			console.error('Unexpected error:', err);
-			alert('An unexpected error occurred while signing out.');
-		} finally {
-			loading = false;
+		} catch (err: any) {
+			// If it's a session missing error, that's fine - proceed with clearing state
+			if (!err?.message?.includes('session missing') && !err?.message?.includes('AuthSessionMissingError')) {
+				console.error('Unexpected error:', err);
+			}
 		}
+		
+		// Always clear the user state and redirect, regardless of signOut result
+		user = null;
+		// Use full page reload to ensure all cookies and state are cleared
+		window.location.href = '/admin';
 	}
 </script>
 
