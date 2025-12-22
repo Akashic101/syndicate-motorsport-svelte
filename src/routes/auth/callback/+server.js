@@ -11,8 +11,11 @@ export const GET = async (event) => {
 	if (code) {
 		const { error } = await supabase.auth.exchangeCodeForSession(code);
 		if (!error) {
+			// Clean redirect path without any query parameters
 			const redirect_path = next.startsWith('/') ? next : `/${next}`;
-			throw redirect(303, redirect_path);
+			// Create a new URL to ensure no query params are included
+			const clean_url = new URL(redirect_path, url.origin);
+			throw redirect(303, clean_url.pathname);
 		}
 	}
 

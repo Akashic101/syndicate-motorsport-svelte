@@ -14,7 +14,14 @@ function get_authorized_user_ids(): string[] {
 	return cleaned.split(',').map((id) => id.trim()).filter((id) => id.length > 0);
 }
 
-export const load: PageServerLoad = async ({ locals, cookies }) => {
+export const load: PageServerLoad = async ({ locals, cookies, url }) => {
+	// If there's a code parameter, redirect to callback handler to process it
+	if (url.searchParams.has('code')) {
+		const next = url.searchParams.get('next') ?? '/admin';
+		const code = url.searchParams.get('code');
+		throw redirect(303, `/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
+	}
+
 	// Get the session using locals.supabase (which handles cookies automatically)
 	let session = null;
 	let discord_id = null;
