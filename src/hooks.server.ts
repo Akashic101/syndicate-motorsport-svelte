@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { paraglideMiddleware } from '$lib/paraglide/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -12,29 +12,26 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Create Supabase client for server-side use with cookie handling
-	event.locals.supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+	event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
 		cookies: {
-			getAll: () => {
-				return event.cookies.getAll().map((cookie) => ({
-					name: cookie.name,
-					value: cookie.value
-				}));
+			getAll() {
+				return event.cookies.getAll();
 			},
-			setAll: (cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) => {
+			setAll(cookiesToSet) {
 				cookiesToSet.forEach(({ name, value, options }) => {
-					event.cookies.set(name, value, {
-						path: '/',
-						...(options as Record<string, unknown>)
-					});
+					event.cookies.set(name, value, { ...options, path: '/' });
 				});
 			}
 		}
-	} as Parameters<typeof createClient>[2]);
+	});
 
 	return paraglideMiddleware(event.request, ({ request, locale }) => {
 		event.request = request;
 
 		return resolve(event, {
+			filterSerializedResponseHeaders(name) {
+				return name === 'content-range' || name === 'x-supabase-api-version';
+			},
 			transformPageChunk: ({ html }) => html.replace('%paraglide.lang%', locale)
 		});
 	});

@@ -9,14 +9,14 @@ export const GET = async (event) => {
 	const next = url.searchParams.get('next') ?? '/admin';
 
 	if (code) {
-		const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-		if (!error && data.session) {
+		const { error } = await supabase.auth.exchangeCodeForSession(code);
+		if (!error) {
 			const redirect_path = next.startsWith('/') ? next : `/${next}`;
 			throw redirect(303, redirect_path);
 		}
 	}
 
-	// If no code, let the client-side page handle hash-based tokens
-	return new Response(null, { status: 200 });
+	// return the user to an error page with instructions
+	throw redirect(303, '/auth/auth-code-error');
 };
 

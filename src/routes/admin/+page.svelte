@@ -4,6 +4,7 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 
 	let { data } = $props<{
 		data: {
@@ -24,10 +25,15 @@
 	async function sign_in_with_discord() {
 		loading = true;
 		try {
+			// Get the current origin from the page URL (works in both dev and production)
+			const current_origin = page.url.origin;
+			const redirect_url = `${current_origin}/auth/callback?next=/admin`;
+			
 			const { error } = await supabase.auth.signInWithOAuth({
 				provider: 'discord',
 				options: {
-					redirectTo: `${window.location.origin}/auth/callback?next=/admin`
+					redirectTo: redirect_url,
+					skipBrowserRedirect: false
 				}
 			});
 
