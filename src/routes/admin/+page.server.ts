@@ -14,8 +14,9 @@ function get_authorized_user_ids(): string[] {
 	return cleaned.split(',').map((id) => id.trim()).filter((id) => id.length > 0);
 }
 
-export const load: PageServerLoad = async ({ locals, cookies, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	// If there's a code parameter, redirect to callback handler to process it
+	// This is a safety net in case Supabase redirects directly to /admin with code
 	if (url.searchParams.has('code')) {
 		const next = url.searchParams.get('next') ?? '/admin';
 		const code = url.searchParams.get('code');
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	}
 
 	// Get the session using locals.supabase (which handles cookies automatically)
+	// Following official Supabase SvelteKit SSR pattern
 	let session = null;
 	let discord_id = null;
 
@@ -31,28 +33,6 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 		if (!error && data.session) {
 			session = data.session;
 			discord_id = data.session.user?.user_metadata?.provider_id || data.session.user?.user_metadata?.discord_id;
-		} else {
-			// Try to get user directly (this makes a request to Supabase)
-			const { data: user_data, error: user_error } = await locals.supabase.auth.getUser();
-			if (user_data.user && !user_error) {
-				discord_id = user_data.user.user_metadata?.provider_id || user_data.user.user_metadata?.discord_id;
-				// Create a minimal session object
-				session = { user: user_data.user };
-			}
-			
-			// Also check for manually set cookies (from client-side callback)
-			const access_token = cookies.get('sb-access-token');
-			const refresh_token = cookies.get('sb-refresh-token');
-			if (access_token && refresh_token && !discord_id) {
-				const { data: session_data, error: session_error } = await locals.supabase.auth.setSession({
-					access_token,
-					refresh_token
-				});
-				if (!session_error && session_data.session) {
-					session = session_data.session;
-					discord_id = session_data.session.user?.user_metadata?.provider_id || session_data.session.user?.user_metadata?.discord_id;
-				}
-			}
 		}
 	}
 

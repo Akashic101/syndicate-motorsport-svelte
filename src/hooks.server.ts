@@ -12,6 +12,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Create Supabase client for server-side use with cookie handling
+	// Following official Supabase SvelteKit SSR pattern
 	event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
 		cookies: {
 			getAll() {
@@ -19,7 +20,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 			},
 			setAll(cookiesToSet) {
 				cookiesToSet.forEach(({ name, value, options }) => {
-					event.cookies.set(name, value, { ...options, path: '/' });
+					event.cookies.set(name, value, {
+						path: '/',
+						...options
+					});
 				});
 			}
 		}

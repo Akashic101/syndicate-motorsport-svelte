@@ -24,51 +24,43 @@
 
 	async function sign_in_with_discord() {
 		loading = true;
-		try {
-			// Get the current origin from the page URL (works in both dev and production)
-			const current_origin = page.url.origin;
-			const redirect_url = `${current_origin}/auth/callback?next=/admin`;
-			
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider: 'discord',
-				options: {
-					redirectTo: redirect_url,
-					skipBrowserRedirect: false
-				}
-			});
-
-			if (error) {
-				console.error('Error signing in with Discord:', error);
-				alert('Failed to sign in with Discord. Please try again.');
+		// Following official Supabase Discord auth docs pattern
+		const { error } = await supabase.auth.signInWithOAuth({
+			provider: 'discord',
+			options: {
+				redirectTo: `${page.url.origin}/auth/callback?next=/admin`
 			}
-		} catch (err) {
-			console.error('Unexpected error:', err);
-			alert('An unexpected error occurred. Please try again.');
-		} finally {
+		});
+		
+		if (error) {
 			loading = false;
+			alert('Failed to sign in with Discord. Please try again.');
 		}
+		// Note: signInWithOAuth automatically redirects, so we don't need to handle success
 	}
 
 	async function sign_out() {
 		loading = true;
-		try {
-			// Try to sign out, but don't fail if session is already missing
-			const { error } = await supabase.auth.signOut();
-			// If error is about missing session, that's okay - we'll clear state anyway
-			if (error && !error.message?.includes('session missing')) {
-				console.error('Error signing out:', error);
-			}
-		} catch (err: any) {
-			// If it's a session missing error, that's fine - proceed with clearing state
-			if (!err?.message?.includes('session missing') && !err?.message?.includes('AuthSessionMissingError')) {
-				console.error('Unexpected error:', err);
+		// Following official Supabase docs pattern
+		// https://supabase.com/docs/guides/auth/social-login/auth-discord
+		const { error } = await supabase.auth.signOut();
+		
+		// Clear local state regardless of error (handles case where session is already missing)
+		user = null;
+		
+		if (error) {
+			// If it's a session missing error, that's fine - session is already cleared
+			if (!error.message?.includes('session missing') && !error.message?.includes('AuthSessionMissingError')) {
+				loading = false;
+				alert('Failed to sign out. Please try again.');
+				return;
 			}
 		}
 		
-		// Always clear the user state and redirect, regardless of signOut result
-		user = null;
-		// Use full page reload to ensure all cookies and state are cleared
-		window.location.href = '/admin';
+		// Refresh server-side data and redirect
+		await invalidateAll();
+		await goto('/admin');
+		loading = false;
 	}
 </script>
 
