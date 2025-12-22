@@ -15,15 +15,7 @@ function get_authorized_user_ids(): string[] {
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	// If there's a code parameter, redirect to callback handler to process it
-	// This is a safety net in case Supabase redirects directly to /admin with code
-	if (url.searchParams.has('code')) {
-		const next = url.searchParams.get('next') ?? '/admin';
-		const code = url.searchParams.get('code');
-		throw redirect(303, `/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
-	}
-
-	// Get the session using locals.supabase (which handles cookies automatically)
+	// Get the session first to check if user is already authenticated
 	// Following official Supabase SvelteKit SSR pattern
 	let session = null;
 	let discord_id = null;
@@ -34,6 +26,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			session = data.session;
 			discord_id = data.session.user?.user_metadata?.provider_id || data.session.user?.user_metadata?.discord_id;
 		}
+	}
+
+	// If there's a code parameter but we already have a session, ignore the code
+	// This prevents redirect loops when Supabase redirects to /admin with code
+	if (url.searchParams.has('code') && !session) {
+		const next = url.searchParams.get('next') ?? '/admin';
+		const code = url.searchParams.get('code');
+		throw redirect(303, `/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
 	}
 
 	// Get authorized Discord user IDs

@@ -18,16 +18,16 @@ export const GET = async (event) => {
 		const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 		
 		// Check if we have a session after exchange
-		// Sometimes exchangeCodeForSession returns an error but still creates a session
 		if (data?.session) {
-			// Redirect to the next path (clean URL without query params)
+			// Clean redirect to next path (no query params)
+			// SvelteKit redirect() handles relative paths correctly
 			throw redirect(303, next);
 		}
 		
-		// If no session in data, try to get it directly
+		// If no session in data, try to get it directly (cookies might be set but not in response)
 		const { data: sessionData } = await supabase.auth.getSession();
 		if (sessionData?.session) {
-			// Session exists, redirect to next
+			// Clean redirect to next path (no query params)
 			throw redirect(303, next);
 		}
 		
