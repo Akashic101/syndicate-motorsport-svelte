@@ -3,7 +3,7 @@
 	import { DiscordSolid } from 'flowbite-svelte-icons';
 	import { supabase } from '$lib/supabaseClient';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 
 	let { data } = $props<{
@@ -55,12 +55,18 @@
 			const { error } = await supabase.auth.signOut();
 			if (error) {
 				console.error('Error signing out:', error);
+				alert('Failed to sign out. Please try again.');
 			} else {
+				// Clear the user state
 				user = null;
+				// Invalidate all server-side data to refresh the session
+				await invalidateAll();
+				// Navigate to admin page (which will show login since session is cleared)
 				await goto('/admin');
 			}
 		} catch (err) {
 			console.error('Unexpected error:', err);
+			alert('An unexpected error occurred while signing out.');
 		} finally {
 			loading = false;
 		}
