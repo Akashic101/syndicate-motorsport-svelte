@@ -1,5 +1,11 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 declare global {
-	namespace App {}
+	namespace App {
+		interface Locals {
+			supabase: SupabaseClient;
+		}
+	}
 }
 
 declare module 'simple-datatables' {
