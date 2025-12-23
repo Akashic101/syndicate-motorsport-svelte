@@ -19,16 +19,17 @@ export const GET = async (event) => {
 		
 		// Check if we have a session after exchange
 		if (data?.session) {
-			// Clean redirect to next path (no query params)
-			// SvelteKit redirect() handles relative paths correctly
-			throw redirect(303, next);
+			// Clean redirect to next path - ensure it's just the pathname with no query params
+			const cleanNext = next.split('?')[0].split('#')[0];
+			throw redirect(303, cleanNext);
 		}
 		
 		// If no session in data, try to get it directly (cookies might be set but not in response)
 		const { data: sessionData } = await supabase.auth.getSession();
 		if (sessionData?.session) {
-			// Clean redirect to next path (no query params)
-			throw redirect(303, next);
+			// Clean redirect to next path - ensure it's just the pathname with no query params
+			const cleanNext = next.split('?')[0].split('#')[0];
+			throw redirect(303, cleanNext);
 		}
 		
 		// If there was an error and no session, log it for debugging

@@ -28,11 +28,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 
-	// If there's a code parameter but we already have a session, ignore the code
-	// This prevents redirect loops when Supabase redirects to /admin with code
-	if (url.searchParams.has('code') && !session) {
+	// If there's a code parameter, always redirect to callback handler to process it
+	// This ensures codes are processed and removed from the URL
+	if (url.searchParams.has('code')) {
 		const next = url.searchParams.get('next') ?? '/admin';
 		const code = url.searchParams.get('code');
+		// Redirect to callback handler which will process the code and redirect to clean URL
 		throw redirect(303, `/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
 	}
 
