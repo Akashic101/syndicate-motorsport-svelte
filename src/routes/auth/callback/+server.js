@@ -16,14 +16,14 @@ export const GET = async (event) => {
 
 	if (code) {
 		const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-		
+
 		// Check if we have a session after exchange
 		if (data?.session) {
 			// Clean redirect to next path - ensure it's just the pathname with no query params
 			const cleanNext = next.split('?')[0].split('#')[0];
 			throw redirect(303, cleanNext);
 		}
-		
+
 		// If no session in data, try to get it directly (cookies might be set but not in response)
 		const { data: sessionData } = await supabase.auth.getSession();
 		if (sessionData?.session) {
@@ -31,7 +31,7 @@ export const GET = async (event) => {
 			const cleanNext = next.split('?')[0].split('#')[0];
 			throw redirect(303, cleanNext);
 		}
-		
+
 		// If there was an error and no session, log it for debugging
 		if (error) {
 			console.error('Error exchanging code for session:', error);
@@ -41,4 +41,3 @@ export const GET = async (event) => {
 	// return the user to an error page with instructions
 	throw redirect(303, '/auth/auth-code-error');
 };
-

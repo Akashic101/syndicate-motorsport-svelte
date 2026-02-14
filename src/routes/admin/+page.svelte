@@ -31,7 +31,7 @@
 				redirectTo: `${page.url.origin}/auth/callback?next=/admin`
 			}
 		});
-		
+
 		if (error) {
 			loading = false;
 			alert('Failed to sign in with Discord. Please try again.');
@@ -44,19 +44,22 @@
 		// Following official Supabase docs pattern
 		// https://supabase.com/docs/guides/auth/social-login/auth-discord
 		const { error } = await supabase.auth.signOut();
-		
+
 		// Clear local state regardless of error (handles case where session is already missing)
 		user = null;
-		
+
 		if (error) {
 			// If it's a session missing error, that's fine - session is already cleared
-			if (!error.message?.includes('session missing') && !error.message?.includes('AuthSessionMissingError')) {
+			if (
+				!error.message?.includes('session missing') &&
+				!error.message?.includes('AuthSessionMissingError')
+			) {
 				loading = false;
 				alert('Failed to sign out. Please try again.');
 				return;
 			}
 		}
-		
+
 		// Refresh server-side data and redirect
 		await invalidateAll();
 		await goto('/admin');
@@ -95,17 +98,17 @@
 
 					<div class="space-y-3 border-t border-green-200 pt-4 dark:border-green-800">
 						<div>
-							<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+							<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 								User ID
 							</p>
-							<p class="mt-1 break-all text-sm text-green-900 dark:text-green-100">
+							<p class="mt-1 text-sm break-all text-green-900 dark:text-green-100">
 								{user.id}
 							</p>
 						</div>
 
 						{#if user.email}
 							<div>
-								<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+								<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 									Email
 								</p>
 								<p class="mt-1 text-sm text-green-900 dark:text-green-100">{user.email}</p>
@@ -114,7 +117,7 @@
 
 						{#if user.user_metadata?.preferred_username}
 							<div>
-								<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+								<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 									Discord Username
 								</p>
 								<p class="mt-1 text-sm text-green-900 dark:text-green-100">
@@ -125,7 +128,7 @@
 
 						{#if user.user_metadata?.discord_id}
 							<div>
-								<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+								<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 									Discord ID
 								</p>
 								<p class="mt-1 text-sm text-green-900 dark:text-green-100">
@@ -135,7 +138,7 @@
 						{/if}
 
 						<div>
-							<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+							<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 								Account Created
 							</p>
 							<p class="mt-1 text-sm text-green-900 dark:text-green-100">
@@ -145,7 +148,7 @@
 
 						{#if user.last_sign_in_at}
 							<div>
-								<p class="text-xs font-medium uppercase text-green-700 dark:text-green-300">
+								<p class="text-xs font-medium text-green-700 uppercase dark:text-green-300">
 									Last Sign In
 								</p>
 								<p class="mt-1 text-sm text-green-900 dark:text-green-100">
@@ -156,13 +159,7 @@
 					</div>
 				</div>
 
-				<Button
-					color="red"
-					size="xl"
-					class="w-full"
-					onclick={sign_out}
-					disabled={loading}
-				>
+				<Button color="red" size="xl" class="w-full" onclick={sign_out} disabled={loading}>
 					Sign Out
 				</Button>
 			</div>
@@ -184,4 +181,3 @@
 		{/if}
 	</div>
 </div>
-

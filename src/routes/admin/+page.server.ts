@@ -11,7 +11,10 @@ function get_authorized_user_ids(): string[] {
 	}
 	// Remove quotes if present (sometimes .env files have quotes)
 	const cleaned = authorized_ids_env.replace(/^['"]|['"]$/g, '');
-	return cleaned.split(',').map((id) => id.trim()).filter((id) => id.length > 0);
+	return cleaned
+		.split(',')
+		.map((id) => id.trim())
+		.filter((id) => id.length > 0);
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -24,7 +27,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		const { data, error } = await locals.supabase.auth.getSession();
 		if (!error && data.session) {
 			session = data.session;
-			discord_id = data.session.user?.user_metadata?.provider_id || data.session.user?.user_metadata?.discord_id;
+			discord_id =
+				data.session.user?.user_metadata?.provider_id ||
+				data.session.user?.user_metadata?.discord_id;
 		}
 	}
 
@@ -57,4 +62,3 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		session
 	};
 };
-

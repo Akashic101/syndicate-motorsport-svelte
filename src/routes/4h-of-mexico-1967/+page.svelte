@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { data } = $props<{ data: { html: string } }>();
+	let { data } = $props<{ data: { html: string; toc: unknown[] } }>();
 </script>
 
 <svelte:head>

@@ -4,6 +4,8 @@
 
 Syndicate Motorsport presents our special 4h race at the 1967-version Autódromo Hermanos Rodríguez
 
+<!-- toc -->
+
 ---
 
 # Mandatory downloads
