@@ -52,6 +52,9 @@
 		<NavLi class="text-lg" data-umami-event="navigate-to-support-us" href="/support-us"
 			>Support Us</NavLi
 		>
+		<NavLi class="text-lg" data-umami-event="4h-of-mexico-1967" href="/4h-of-mexico-1967"
+			>4h of Mexico 1967</NavLi
+		>
 	</NavUl>
 </Navbar>
 

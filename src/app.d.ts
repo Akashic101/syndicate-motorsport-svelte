@@ -2,6 +2,11 @@ declare global {
 	namespace App {}
 }
 
+declare module '*.md?raw' {
+	const content: string;
+	export default content;
+}
+
 declare module 'simple-datatables' {
 	export { DataTable } from 'simple-datatables/dist/dts/datatable';
 	export { convertCSV, convertJSON } from 'simple-datatables/dist/dts/convert';
