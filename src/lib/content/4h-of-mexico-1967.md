@@ -36,7 +36,12 @@ Syndicate Motorsport presents our special 4h race at the 1967-version Autódromo
 
 ## Car skinpack
 
-While optional we highly recommend download the custom liveries the community created for this event. This is the first event we are running a custom bot to make downloading and updating liveries, more details will follow when available. As a backup we will also provide a manual zip-file before each session
+While optional we highly recommend download the custom liveries the community created for this event. This is the first event we are running a custom bot to make downloading and updating liveries as easy as possible so if there are any problems please reach out to Akashic on Discord.
+
+* [Install via Content Manager](acmanager://install?url=https://vac.davidmoll.net/merged_cars.zip)
+* [Manual download](https://vac.davidmoll.net/merged_cars.zip)
+
+<div class="my-4 rounded-lg border border-amber-500/50 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-900/20" role="alert">  <p class="font-medium text-amber-800 dark:text-amber-200">⚠️ Note:</p>  <p class="mt-1 text-sm text-amber-700 dark:text-amber-300"> Please do not download the zip-file too often, at best once before each event. Bandwith is limited and too many downloads can create problems.</p></div>
 
 ---
 
