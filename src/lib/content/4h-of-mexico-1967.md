@@ -8,6 +8,10 @@ Syndicate Motorsport presents our special 4h race at the 1967-version Autódromo
 
 ---
 
+## Rules and Regulation
+
+Please make sure to read [our rulebook](https://docs.google.com/document/d/1INAGo4rZKlLax-fJ1BGadewKlU48TvNMUSk5d5u6OZo/edit?tab=t.0#heading=h.xidipkakl490) to get accustomed to how we expect the drivers to behave in our races. We strongly recommend to read this as we do not accept any kind of "I did not read it"-excuses in any case.
+
 # Mandatory downloads
 
 <div class="my-4 rounded-lg border border-amber-500/50 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-900/20" role="alert">  <p class="font-medium text-amber-800 dark:text-amber-200">⚠️ MANDATORY</p>  <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">These apps, cars and tracks are mandatory and MUST be downloaded. Failure to have everything installed will result into an instant kick from the server when attempting to join.</p></div>
