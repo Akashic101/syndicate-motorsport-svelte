@@ -104,3 +104,5 @@ The 1967 layout of Autódromo Hermanos Rodríguez is a fast, flowing circuit loc
 - Practice is running 24/7
 - Quali and test-race details will be announced soon
 - Main race starts on the _14.03.2026_ at 19:00 CET. [See the time in your local timezone](https://everytimezone.com/s/be71ec9e)
+
+![schedule](https://media.discordapp.net/attachments/830833047548985395/1473237211469058220/image.png?ex=69996f12&is=69981d92&hm=ad68ec871f55f1ad898f06b178d742abd67bf41599a8f5d2aea11af28ce10f49&=&format=webp&quality=lossless)
