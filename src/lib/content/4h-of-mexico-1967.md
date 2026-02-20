@@ -111,3 +111,7 @@ The 1967 layout of Autódromo Hermanos Rodríguez is a fast, flowing circuit loc
 
 * [Lifetiming and timetracker](http://138.201.226.34:8392/live-timing)
 * [Join Server](https://acstuff.ru/s/q:race/online/join?httpPort=8381&ip=138.201.226.34) (Requires CM)
+
+## Looking for a teammate
+
+If you want to participate in the event but currently do not have a teammate you can ask on our [Discord Forum](https://discord.com/channels/766219928109580318/1471894295849074924). We provided a small template which makes it easy to find someone who can join your team
